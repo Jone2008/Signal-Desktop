@@ -5,6 +5,7 @@ import Long from 'long';
 import { join } from 'path';
 import * as sinon from 'sinon';
 import { BackupLevel } from '@signalapp/libsignal-client/zkgroup';
+import { DataWriter } from '../../sql/Client';
 import { Backups } from '../../protobuf';
 import {
   getFilePointerForAttachment,
@@ -74,7 +75,7 @@ describe('convertFilePointerToAttachment', () => {
         backupLocator: new Backups.FilePointer.BackupLocator({
           mediaName: 'mediaName',
           cdnNumber: 3,
-          size: 128,
+          size: Long.fromNumber(128),
           key: Bytes.fromString('key'),
           digest: Bytes.fromString('digest'),
           transitCdnKey: 'transitCdnKey',
@@ -160,6 +161,9 @@ describe('convertFilePointerToAttachment', () => {
   });
 });
 
+const defaultDigest = Bytes.fromBase64('digest');
+const defaultMediaName = Bytes.toHex(defaultDigest);
+
 function composeAttachment(
   overrides: Partial<AttachmentType> = {}
 ): AttachmentType {
@@ -170,7 +174,7 @@ function composeAttachment(
     cdnNumber: 2,
     path: 'path/to/file.png',
     key: 'key',
-    digest: 'digest',
+    digest: Bytes.toBase64(defaultDigest),
     iv: 'iv',
     width: 100,
     height: 100,
@@ -201,18 +205,17 @@ const defaultAttachmentLocator = new Backups.FilePointer.AttachmentLocator({
   cdnKey: 'cdnKey',
   cdnNumber: 2,
   key: Bytes.fromBase64('key'),
-  digest: Bytes.fromBase64('digest'),
+  digest: defaultDigest,
   size: 100,
   uploadTimestamp: Long.fromNumber(1234),
 });
 
-const defaultMediaName = 'digest';
 const defaultBackupLocator = new Backups.FilePointer.BackupLocator({
   mediaName: defaultMediaName,
   cdnNumber: null,
   key: Bytes.fromBase64('key'),
-  digest: Bytes.fromBase64('digest'),
-  size: 100,
+  digest: defaultDigest,
+  size: Long.fromNumber(100),
   transitCdnKey: 'cdnKey',
   transitCdnNumber: 2,
 });
@@ -454,7 +457,7 @@ describe('getFilePointerForAttachment', () => {
                 ...defaultBackupLocator,
                 key: newKey,
                 digest: newDigest,
-                mediaName: Bytes.toBase64(newDigest),
+                mediaName: Bytes.toHex(newDigest),
                 transitCdnKey: undefined,
                 transitCdnNumber: undefined,
               }),
@@ -496,7 +499,7 @@ describe('getFilePointerForAttachment', () => {
                 ...defaultBackupLocator,
                 key: newKey,
                 digest: newDigest,
-                mediaName: Bytes.toBase64(newDigest),
+                mediaName: Bytes.toHex(newDigest),
                 transitCdnKey: undefined,
                 transitCdnNumber: undefined,
               }),
@@ -552,7 +555,7 @@ describe('getBackupJobForAttachmentAndFilePointer', async () => {
     await window.storage.put('masterKey', Bytes.toBase64(getRandomBytes(32)));
   });
   afterEach(async () => {
-    await window.Signal.Data.removeAll();
+    await DataWriter.removeAll();
   });
   const attachment = composeAttachment();
 
@@ -589,14 +592,14 @@ describe('getBackupJobForAttachmentAndFilePointer', async () => {
         getBackupCdnInfo: notInBackupCdn,
       }),
       {
-        mediaName: 'digest',
+        mediaName: Bytes.toHex(defaultDigest),
         receivedAt: 100,
         type: 'standard',
         data: {
           path: 'path/to/file.png',
           contentType: IMAGE_PNG,
           keys: 'key',
-          digest: 'digest',
+          digest: Bytes.toBase64(defaultDigest),
           iv: 'iv',
           size: 100,
           localKey: attachment.localKey,

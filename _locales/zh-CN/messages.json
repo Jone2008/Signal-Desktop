@@ -81,10 +81,16 @@
     "messageformat": "您的数据库版本与此版本的 Signal 不匹配。请确保您在电脑上打开的是最新版本的 Signal。"
   },
   "icu:databaseError__recover__detail": {
-    "messageformat": "A database error occurred. You can copy the error and contact Signal support to help fix the issue. If you need to use Signal right away, you can attempt to recover your data.\n\nContact support by visiting: {link}"
+    "messageformat": "出现了一个数据库错误。您可以复制错误信息并联系 Signal 支持团队协助处理该问题。如果您需要立即使用 Signal，您可以尝试恢复数据。\n\n请访问此网址联系支持团队：{link}"
   },
   "icu:databaseError__recover__button": {
-    "messageformat": "Recover data"
+    "messageformat": "恢复数据"
+  },
+  "icu:databaseError__safeStorageBackendChange": {
+    "messageformat": "无法访问数据库加密密钥，因为 OS 加密密钥环后端已从 {previousBackend} 更改为 {currentBackend}。当桌面环境发生变化时，如在 GNOME 和 KDE 之间切换，这种情况就会发生。\n\n请切换到之前的桌面环境。"
+  },
+  "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
+    "messageformat": "无法访问数据库加密密钥，因为 OS 加密密钥环后端已从 {previousBackend} 更改为 {currentBackend}。当桌面环境发生变化时，如在 GNOME 和 KDE 之间切换，这种情况就会发生。\n\n请切换到之前的桌面环境，或尝试使用命令行标志 --password-store=\"{previousBackendFlag}\" 运行 Signal"
   },
   "icu:mainMenuFile": {
     "messageformat": "文件(&F)"
@@ -824,8 +830,14 @@
   "icu:cannotUpdateDetail": {
     "messageformat": "Signal 无法更新。请{retry}或访问{url}手动安装应用，然后{support}此问题"
   },
+  "icu:cannotUpdateDetail-v2": {
+    "messageformat": "Signal 无法更新。请<retryUpdateButton>重试更新</retryUpdateButton>或访问 {url} 以进行手动安装，然后<contactSupportLink>联系支持团队</contactSupportLink>反映此问题"
+  },
   "icu:cannotUpdateRequireManualDetail": {
     "messageformat": "Signal 无法更新。请访问{url}手动安装应用，然后{support}此问题"
+  },
+  "icu:cannotUpdateRequireManualDetail-v2": {
+    "messageformat": "Signal 无法更新。请访问 {url} 以进行手动安装，然后<contactSupportLink>联系支持团队</contactSupportLink>反映此问题"
   },
   "icu:readOnlyVolume": {
     "messageformat": "Signal Desktop 可能在 macOS 隔离区，无法自动升级。请用 Finder 移动{app}应用至{folder}。"
@@ -1101,7 +1113,7 @@
     "messageformat": "已关联的设备"
   },
   "icu:linkNewDevice": {
-    "messageformat": "关联新设备"
+    "messageformat": "链接新设备"
   },
   "icu:Install__learn-more": {
     "messageformat": "了解更多"
@@ -1119,10 +1131,7 @@
     "messageformat": "设置"
   },
   "icu:Install__instructions__3": {
-    "messageformat": "点击{plusButton}（Android）或{linkNewDevice} （iPhone）"
-  },
-  "icu:Install__qr-failed-load": {
-    "messageformat": "无法加载此二维码。请检查您的网络并重试。<retry>重试</retry>"
+    "messageformat": "点击 {linkNewDevice}"
   },
   "icu:Install__qr-failed-load__error--timeout": {
     "messageformat": "无法加载此二维码。请检查您的网络连接并重试。"
@@ -1200,7 +1209,7 @@
     "messageformat": "加入通话"
   },
   "icu:calling__return": {
-    "messageformat": "回拨"
+    "messageformat": "回到通话"
   },
   "icu:calling__lobby-automatically-muted-because-there-are-a-lot-of-people": {
     "messageformat": "由于通话人数众多，麦克风已静音"
@@ -1404,13 +1413,13 @@
     "messageformat": "您已屏蔽{name}"
   },
   "icu:calling__blocked-participant": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "{name}已被屏蔽"
   },
   "icu:calling__block-info-title": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "{name}已被屏蔽"
   },
   "icu:calling__block-info": {
-    "messageformat": "You won’t receive their audio or video and they won’t receive yours."
+    "messageformat": "您与他们之间将无法收到对方的音频或视频。"
   },
   "icu:calling__missing-media-keys": {
     "messageformat": "无法接收来自 {name} 的音频和视频"
@@ -2625,10 +2634,10 @@
     "messageformat": "拒绝"
   },
   "icu:declinedIncomingAudioCall": {
-    "messageformat": "您拒接了语音通话"
+    "messageformat": "拒接的语音通话"
   },
   "icu:declinedIncomingVideoCall": {
-    "messageformat": "您拒接了视频通话"
+    "messageformat": "拒接的视频通话"
   },
   "icu:acceptedIncomingAudioCall": {
     "messageformat": "语音来电"
@@ -2661,10 +2670,10 @@
     "messageformat": "Signal 将会在通知区域继续运行。您可以在 Signal 设置中对此进行更改。"
   },
   "icu:incomingAudioCall": {
-    "messageformat": "语音来电…"
+    "messageformat": "语音来电"
   },
   "icu:incomingVideoCall": {
-    "messageformat": "视频来电…"
+    "messageformat": "视频来电"
   },
   "icu:outgoingAudioCall": {
     "messageformat": "拨出语音通话"
@@ -2709,7 +2718,7 @@
     "messageformat": "{count, plural, other {{count,number} 人}}"
   },
   "icu:CallControls__InfoDisplay--audio-call": {
-    "messageformat": "音频通话"
+    "messageformat": "语音通话"
   },
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "通话链接"
@@ -2772,16 +2781,16 @@
     "messageformat": "{people, plural, other {{people,number} 人参与通话}}"
   },
   "icu:calling__call-notification__ended": {
-    "messageformat": "群组通话已结束"
+    "messageformat": "视频通话已结束"
   },
   "icu:calling__call-notification__started-by-someone": {
-    "messageformat": "群组通话已开启"
+    "messageformat": "已开始视频通话"
   },
   "icu:calling__call-notification__started-by-you": {
-    "messageformat": "您发起了一个群组通话"
+    "messageformat": "你发起了视频通话"
   },
   "icu:calling__call-notification__started": {
-    "messageformat": "{name} 开启了群组通话"
+    "messageformat": "{name}发起了视频通话"
   },
   "icu:calling__in-another-call-tooltip": {
     "messageformat": "您已在通话中"
@@ -5424,6 +5433,9 @@
   "icu:CallsList__ItemCallInfo--Missed": {
     "messageformat": "未接"
   },
+  "icu:CallsList__ItemCallInfo--Declined": {
+    "messageformat": "已拒接"
+  },
   "icu:CallsList__ItemCallInfo--GroupCall": {
     "messageformat": "群组通话"
   },
@@ -5437,7 +5449,7 @@
     "messageformat": "要退出当前通话？"
   },
   "icu:CallsList__LeaveCallDialogBody": {
-    "messageformat": "您必须退出当前通话才能加入到其他通话中。"
+    "messageformat": "您必须退出当前通话才能开始或加入其他通话。"
   },
   "icu:CallsList__LeaveCallDialogButton--leave": {
     "messageformat": "离开通话"
@@ -5469,14 +5481,50 @@
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "通话链接"
   },
+  "icu:CallHistory__DescriptionVideoCall--Default": {
+    "messageformat": "{direction, select, Outgoing {拨出视频通话} other {视频来电}}"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Missed": {
+    "messageformat": "未接视频来电"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Unanswered": {
+    "messageformat": "未接视频通话"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Declined": {
+    "messageformat": "拒接的视频通话"
+  },
   "icu:CallLinkDetails__Join": {
     "messageformat": "加入"
+  },
+  "icu:CallLinkDetails__AddCallNameLabel": {
+    "messageformat": "添加通话名称"
+  },
+  "icu:CallLinkDetails__EditCallNameLabel": {
+    "messageformat": "编辑通话名称"
+  },
+  "icu:CallLinkDetails__ApproveAllMembersLabel": {
+    "messageformat": "批准所有成员"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "复制链接"
   },
   "icu:CallLinkDetails__ShareLinkViaSignal": {
     "messageformat": "通过 Signal 分享链接"
+  },
+  "icu:CallLinkDetails__DeleteLink": {
+    "messageformat": "Delete link"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Title": {
+    "messageformat": "Delete call link?"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Body": {
+    "messageformat": "This link will no longer work for anyone who has it."
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
+    "messageformat": "Cancel"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Delete": {
+    "messageformat": "Delete"
   },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "通话链接详情"
@@ -5487,17 +5535,23 @@
   "icu:CallLinkEditModal__AddCallNameLabel": {
     "messageformat": "添加通话名称"
   },
+  "icu:CallLinkEditModal__EditCallNameLabel": {
+    "messageformat": "编辑通话名称"
+  },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
     "messageformat": "批准所有成员"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--Off": {
+  "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "关"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--On": {
+  "icu:CallLinkRestrictionsSelect__Option--On": {
     "messageformat": "开"
   },
   "icu:CallLinkAddNameModal__Title": {
     "messageformat": "添加通话名称"
+  },
+  "icu:CallLinkAddNameModal__Title--Edit": {
+    "messageformat": "编辑通话名称"
   },
   "icu:CallLinkAddNameModal__NameLabel": {
     "messageformat": "通话名称"
@@ -5542,10 +5596,19 @@
     "messageformat": "我们进行了功能微调、漏洞修复和性能强化。感谢使用 Signal！",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.16--0": {
-    "messageformat": "我们修复了一个漏洞，该漏洞会在通话重新连接时导致“通话最小化”按钮无法显示。"
+  "icu:WhatsNew__v7.18--0": {
+    "messageformat": "此版本加快了删除大消息线程的过程。"
   },
-  "icu:WhatsNew__v7.17--0": {
-    "messageformat": "We wanted things to be slicker and quicker for sticker clickers, so we fixed a bug that sometimes prevented Signal from launching the sticker viewer if you tried to open a sticker pack link while the app was closed."
+  "icu:WhatsNew__v7.19--0": {
+    "messageformat": "我们添加了一个快捷方式，方便用户挂断当前通话并加入到新通话。"
+  },
+  "icu:WhatsNew__v7.19--1": {
+    "messageformat": "对于语言环境设置为“POSIX”的用户，此次更新还修复了 Linux 上的启动崩溃问题。"
+  },
+  "icu:WhatsNew__v7.20--0": {
+    "messageformat": "Stories with long captions are displayed on a subtle gradient background that improves contrast and makes the text easier to read. Now that people can see what you're saying, feel free to write a couple paragraphs about why something really made you laugh instead of just saying \"lol.\""
+  },
+  "icu:WhatsNew__v7.20--1": {
+    "messageformat": "This release also improves the performance of link preview generation and fixes a bug that caused the Settings window to briefly flash a lovely shade of ultramarine whenever it was closed (instead of just closing right away)."
   }
 }

@@ -7,7 +7,7 @@ import { PassThrough } from 'node:stream';
 
 import * as durations from '../util/durations';
 import * as log from '../logging/log';
-import dataInterface from '../sql/Client';
+import { DataWriter } from '../sql/Client';
 
 import * as Errors from '../types/errors';
 import { redactGenericText } from '../util/privacy';
@@ -60,6 +60,7 @@ import {
   isVideoTypeSupported,
 } from '../util/GoogleChrome';
 import { getLocalAttachmentUrl } from '../util/getLocalAttachmentUrl';
+import { findRetryAfterTimeFromError } from './helpers/findRetryAfterTimeFromError';
 
 const MAX_CONCURRENT_JOBS = 3;
 const RETRY_CONFIG = {
@@ -81,10 +82,10 @@ const THUMBNAIL_RETRY_CONFIG = {
 export class AttachmentBackupManager extends JobManager<CoreAttachmentBackupJobType> {
   private static _instance: AttachmentBackupManager | undefined;
   static defaultParams: JobManagerParamsType<CoreAttachmentBackupJobType> = {
-    markAllJobsInactive: dataInterface.markAllAttachmentBackupJobsInactive,
-    saveJob: dataInterface.saveAttachmentBackupJob,
-    removeJob: dataInterface.removeAttachmentBackupJob,
-    getNextJobs: dataInterface.getNextAttachmentBackupJobs,
+    markAllJobsInactive: DataWriter.markAllAttachmentBackupJobsInactive,
+    saveJob: DataWriter.saveAttachmentBackupJob,
+    removeJob: DataWriter.removeAttachmentBackupJob,
+    getNextJobs: DataWriter.getNextAttachmentBackupJobs,
     runJob: runAttachmentBackupJob,
     shouldHoldOffOnStartingQueuedJobs: () => {
       const reduxState = window.reduxStore?.getState();
@@ -213,6 +214,17 @@ export async function runAttachmentBackupJob(
         `${logId}: Unable to reencrypt to match same digest; content must have changed`
       );
       return { status: 'finished' };
+    }
+
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      (error.code === 413 || error.code === 429)
+    ) {
+      return {
+        status: 'rate-limited',
+        pauseDurationMs: findRetryAfterTimeFromError(error),
+      };
     }
 
     return { status: 'retry' };
@@ -604,7 +616,7 @@ async function copyToBackupTier({
 
   // Update our local understanding of what's in the backup cdn
   const sizeOnBackupCdn = getAesCbcCiphertextLength(ciphertextLength);
-  await window.Signal.Data.saveBackupCdnObjectMetadata([
+  await DataWriter.saveBackupCdnObjectMetadata([
     { mediaId, cdnNumber: response.cdn, sizeOnBackupCdn },
   ]);
 

@@ -81,10 +81,16 @@
     "messageformat": "កំណែនៃមូលដ្ឋានទិន្នន័យរបស់អ្នកមិនត្រូវគ្នានឹងកំណែរបស់ Signal នេះទេ។ ត្រូវប្រាកដថាអ្នកកំពុងបើកកំណែថ្មីបំផុតនៃ Signal នៅលើកុំព្យូទ័ររបស់អ្នក។"
   },
   "icu:databaseError__recover__detail": {
-    "messageformat": "A database error occurred. You can copy the error and contact Signal support to help fix the issue. If you need to use Signal right away, you can attempt to recover your data.\n\nContact support by visiting: {link}"
+    "messageformat": "បញ្ហាមូលដ្ឋានទិន្នន័យបានកើតឡើង។ អ្នកអាចចម្លងបញ្ហានេះ ហើយទាក់ទងផ្នែកជំនួយរបស់ Signal ឱ្យជួយដោះស្រាយ។ ប្រសិនបើអ្នកត្រូវការប្រើ Signal ភ្លាមៗ អ្នកអាចព្យាយាមស្តារទិន្នន័យរបស់អ្នក។\n\nទាក់ទងផ្នែកជំនួយដោយចូលទៅកាន់៖ {link}"
   },
   "icu:databaseError__recover__button": {
-    "messageformat": "Recover data"
+    "messageformat": "ស្តារទិន្នន័យ"
+  },
+  "icu:databaseError__safeStorageBackendChange": {
+    "messageformat": "មិនអាចចូលប្រើកូដអ៊ីនគ្រីបមូលដ្ឋានទិន្នន័យបានទេ ដោយសារផ្នែកខាងក្រោយនៃកម្មវិធីឃីរីងអ៊ីនគ្រីប OS បានផ្លាស់ប្តូរពី {previousBackend} ទៅ {currentBackend}។ វាអាចកើតឡើងប្រសិនបើអ៊ីនធើហ្វេសរបស់ Desktop ផ្លាស់ប្តូរ ឧទាហរណ៍រវាង GNOME និង KDE។\n\nសូមប្តូរទៅអ៊ីនធើហ្វេសរបស់ Desktop ពីមុន។"
+  },
+  "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
+    "messageformat": "មិនអាចចូលប្រើកូដអ៊ីនគ្រីបមូលដ្ឋានទិន្នន័យបានទេ ដោយសារផ្នែកខាងក្រោយនៃកម្មវិធីឃីរីងអ៊ីនគ្រីប OS បានផ្លាស់ប្តូរពី {previousBackend} ទៅ {currentBackend}។ វាអាចកើតឡើងប្រសិនបើអ៊ីនធើហ្វេសរបស់ Desktop ផ្លាស់ប្តូរ ឧទាហរណ៍រវាង GNOME និង KDE។\n\nសូមប្តូរទៅអ៊ីនធើហ្វេសរបស់ Desktop ពីមុន ឬព្យាយាមដំណើរការ Signal ដោយឃ្លាបញ្ជា --password-store=\"{previousBackendFlag}\""
   },
   "icu:mainMenuFile": {
     "messageformat": "&ឯកសារ"
@@ -824,8 +830,14 @@
   "icu:cannotUpdateDetail": {
     "messageformat": "Signal មិនអាចដំឡើងកំណែបានទេ។ {retry} ឬចូលទៅកាន់ {url} ដើម្បីដំឡើងវាដោយផ្ទាល់។ បន្ទាប់មក {support} អំពីបញ្ហានេះ"
   },
+  "icu:cannotUpdateDetail-v2": {
+    "messageformat": "Signal មិនអាចដំឡើងកំណែបានទេ។ <retryUpdateButton>សាកល្បងដំឡើងកំណែម្តងទៀត</retryUpdateButton> ឬចូលទៅកាន់ {url} ដើម្បីដំឡើងវាដោយដៃ។ បន្ទាប់មក<contactSupportLink>ទាក់ទងផ្នែកជំនួយ</contactSupportLink>អំពីបញ្ហានេះ"
+  },
   "icu:cannotUpdateRequireManualDetail": {
     "messageformat": "Signal មិនអាចដំឡើងកំណែបានទេ។ ចូលទៅកាន់ {url}ដើម្បីដំឡើងវាដោយផ្ទាល់។ បន្ទាប់មក {support} អំពីបញ្ហានេះ"
+  },
+  "icu:cannotUpdateRequireManualDetail-v2": {
+    "messageformat": "Signal មិនអាចដំឡើងកំណែបានទេ។ ចូលទៅកាន់ {url} ដើម្បីដំឡើងវាដោយដៃ។ បន្ទាប់មក<contactSupportLink>ទាក់ទងផ្នែកជំនួយ</contactSupportLink>អំពីបញ្ហានេះ"
   },
   "icu:readOnlyVolume": {
     "messageformat": "Signal Desktop ហាក់ដូចជាត្រូវបានដាក់ដាច់គេនៅ macOS និងមិនអាចធ្វើបច្ចុប្បន្នភាពដោយស្វ័យប្រវត្តិបានទេ។​ សូមសាកល្បងផ្លាស់ប្តូរ {app} ទៅ {folder} ជាមួយ Finder។"
@@ -1101,7 +1113,7 @@
     "messageformat": "ឧបករណ៍បានតភ្ជាប់"
   },
   "icu:linkNewDevice": {
-    "messageformat": "តភ្ជាប់ឧបករណ៍ថ្មី"
+    "messageformat": "ភ្ជាប់ឧបករណ៍ថ្មី"
   },
   "icu:Install__learn-more": {
     "messageformat": "សិក្សាបន្ថែម"
@@ -1119,10 +1131,7 @@
     "messageformat": "ការកំណត់"
   },
   "icu:Install__instructions__3": {
-    "messageformat": "ចុច {plusButton} (Android) ឬ {linkNewDevice} (iPhone)"
-  },
-  "icu:Install__qr-failed-load": {
-    "messageformat": "កូដ QR មិនអាចផ្ទុកបានទេ។ សូមមើលសេវាអ៊ីនធឺណិតរបស់អ្នក រួចព្យាយាមម្តងទៀត។ <retry>ព្យាយាមម្តងទៀត</retry>"
+    "messageformat": "ចុច {linkNewDevice}"
   },
   "icu:Install__qr-failed-load__error--timeout": {
     "messageformat": "កូដ QR មិនអាចផ្ទុកបានទេ។ សូមពិនិត្យមើលសេវាអ៊ីនធឺណិតរបស់អ្នក រួចព្យាយាមម្តងទៀត។"
@@ -1200,7 +1209,7 @@
     "messageformat": "ចូលរួមការហៅ"
   },
   "icu:calling__return": {
-    "messageformat": "ត្រឡប់ទៅការហៅវិញ"
+    "messageformat": "ត្រឡប់ទៅការហៅ"
   },
   "icu:calling__lobby-automatically-muted-because-there-are-a-lot-of-people": {
     "messageformat": "មីក្រូហ្វូនត្រូវបានបិទសំឡេងដោយសារមានមនុស្សច្រើនចូលរួមក្នុងការហៅ"
@@ -1404,13 +1413,13 @@
     "messageformat": "អ្នកបានទប់ស្កាត់ {name}"
   },
   "icu:calling__blocked-participant": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "{name} ត្រូវបានទប់ស្កាត់"
   },
   "icu:calling__block-info-title": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "{name} ត្រូវបានទប់ស្កាត់"
   },
   "icu:calling__block-info": {
-    "messageformat": "You won’t receive their audio or video and they won’t receive yours."
+    "messageformat": "អ្នកនឹងមិនទទួលបានសំឡេង ឬវីដេអូរបស់ពួកគេទេ ហើយពួកគេក៏មិនទទួលបានរបស់អ្នកដែរ។"
   },
   "icu:calling__missing-media-keys": {
     "messageformat": "មិនអាចទទួលសំឡេងនិងវីដេអូពី {name}"
@@ -2625,10 +2634,10 @@
     "messageformat": "បដិសេធ"
   },
   "icu:declinedIncomingAudioCall": {
-    "messageformat": "អ្នកមិនព្រមទទួលការហៅជាសំឡេង"
+    "messageformat": "ការហៅជាសំឡេងដែលបានបដិសេធ"
   },
   "icu:declinedIncomingVideoCall": {
-    "messageformat": "អ្នកបានបដិសេធការហៅជាវីដេអូ"
+    "messageformat": "ការហៅជាវីដេអូដែលបានបដិសេធ"
   },
   "icu:acceptedIncomingAudioCall": {
     "messageformat": "ការហៅចូលជាសំឡេង"
@@ -2661,10 +2670,10 @@
     "messageformat": "Signal នឹងបន្តដំណើរការក្នុងទំព័រជូនដំណឹង។ អ្នកអាចផ្លាស់ប្តូរវាបាននៅក្នុងការកំណត់របស់ Signal។"
   },
   "icu:incomingAudioCall": {
-    "messageformat": "ការហៅចូលជាសំឡេង…"
+    "messageformat": "ការហៅចូលជាសំឡេង"
   },
   "icu:incomingVideoCall": {
-    "messageformat": "ការហៅចូលជាវីដេអូ…"
+    "messageformat": "ការហៅចូលជាវីដេអូ"
   },
   "icu:outgoingAudioCall": {
     "messageformat": "ការហៅចេញជាសំឡេង"
@@ -2772,16 +2781,16 @@
     "messageformat": "{people, plural, other {{people,number} នាក់នៅក្នុងការហៅ}}"
   },
   "icu:calling__call-notification__ended": {
-    "messageformat": "ការហៅជាក្រុមត្រូវបានបញ្ចប់"
+    "messageformat": "ការហៅជាវីដេអូបានបញ្ចប់"
   },
   "icu:calling__call-notification__started-by-someone": {
-    "messageformat": "ការហៅជាក្រុមត្រូវបានចាប់ផ្តើម"
+    "messageformat": "ការហៅជាវីដេអូបានចាប់ផ្តើម"
   },
   "icu:calling__call-notification__started-by-you": {
-    "messageformat": "អ្នកបានចាប់ផ្តើមការហៅជាក្រុម"
+    "messageformat": "អ្នកបានចាប់ផ្តើមការហៅជាវីដេអូ"
   },
   "icu:calling__call-notification__started": {
-    "messageformat": "{name} ចាប់ផ្តើមការហៅជាក្រុម"
+    "messageformat": "{name} បានចាប់ផ្តើមការហៅជាវីដេអូ"
   },
   "icu:calling__in-another-call-tooltip": {
     "messageformat": "អ្នកស្ថិតនៅក្នុងការហៅទូរសព្ទស្រាប់ហើយ"
@@ -5424,6 +5433,9 @@
   "icu:CallsList__ItemCallInfo--Missed": {
     "messageformat": "ខកមិនបានទទួល"
   },
+  "icu:CallsList__ItemCallInfo--Declined": {
+    "messageformat": "បានបដិសេធ"
+  },
   "icu:CallsList__ItemCallInfo--GroupCall": {
     "messageformat": "ការហៅជាក្រុម"
   },
@@ -5437,7 +5449,7 @@
     "messageformat": "ចាកចេញពីការហៅបច្ចុប្បន្នឬ?"
   },
   "icu:CallsList__LeaveCallDialogBody": {
-    "messageformat": "អ្នកត្រូវតែចាកចេញពីការហៅបច្ចុប្បន្ន មុនពេលចូលរួមការហៅថ្មី។"
+    "messageformat": "អ្នកត្រូវតែចេញពីការហៅបច្ចុប្បន្នសិន ទើបអាចចាប់ផ្តើម ឬចូលរួមការហៅថ្មីបាន។"
   },
   "icu:CallsList__LeaveCallDialogButton--leave": {
     "messageformat": "បិទការហៅ"
@@ -5469,14 +5481,50 @@
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "តំណសម្រាប់ការហៅ"
   },
+  "icu:CallHistory__DescriptionVideoCall--Default": {
+    "messageformat": "{direction, select, Outgoing {ការហៅចេញជាវីដេអូ} other {ការហៅចូលជាវីដេអូ}}"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Missed": {
+    "messageformat": "ការហៅជាវីដេអូដែលបានខកខាន"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Unanswered": {
+    "messageformat": "ការហៅជាវីដេអូដែលមិនបានឆ្លើយតប"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Declined": {
+    "messageformat": "ការហៅជាវីដេអូដែលបានបដិសេធ"
+  },
   "icu:CallLinkDetails__Join": {
     "messageformat": "ចូលរួម"
+  },
+  "icu:CallLinkDetails__AddCallNameLabel": {
+    "messageformat": "ដាក់ឈ្មោះសម្រាប់ការហៅ"
+  },
+  "icu:CallLinkDetails__EditCallNameLabel": {
+    "messageformat": "កែឈ្មោះសម្រាប់ការហៅ"
+  },
+  "icu:CallLinkDetails__ApproveAllMembersLabel": {
+    "messageformat": "អនុញ្ញាតសមាជិកទាំងអស់"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "ចម្លងតំណ"
   },
   "icu:CallLinkDetails__ShareLinkViaSignal": {
     "messageformat": "ចែករំលែកតំណតាមរយៈ Signal"
+  },
+  "icu:CallLinkDetails__DeleteLink": {
+    "messageformat": "Delete link"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Title": {
+    "messageformat": "Delete call link?"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Body": {
+    "messageformat": "This link will no longer work for anyone who has it."
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
+    "messageformat": "Cancel"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Delete": {
+    "messageformat": "Delete"
   },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "ព័ត៌មានលម្អិតអំពីតំណហៅទូរសព្ទ"
@@ -5487,17 +5535,23 @@
   "icu:CallLinkEditModal__AddCallNameLabel": {
     "messageformat": "ដាក់ឈ្មោះសម្រាប់ការហៅ"
   },
+  "icu:CallLinkEditModal__EditCallNameLabel": {
+    "messageformat": "កែឈ្មោះសម្រាប់ការហៅ"
+  },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
     "messageformat": "អនុញ្ញាតសមាជិកទាំងអស់"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--Off": {
+  "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "បិទ"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--On": {
+  "icu:CallLinkRestrictionsSelect__Option--On": {
     "messageformat": "បើក"
   },
   "icu:CallLinkAddNameModal__Title": {
     "messageformat": "ដាក់ឈ្មោះសម្រាប់ការហៅ"
+  },
+  "icu:CallLinkAddNameModal__Title--Edit": {
+    "messageformat": "កែឈ្មោះសម្រាប់ការហៅ"
   },
   "icu:CallLinkAddNameModal__NameLabel": {
     "messageformat": "ឈ្មោះសម្រាប់ការហៅ"
@@ -5542,10 +5596,19 @@
     "messageformat": "ការកែប្រែបន្តិចបន្តួច ការដោះស្រាយបញ្ហា និងការបង្កើនប្រតិបត្តិការ។ សូមអរគុណចំពោះការប្រើប្រាស់ Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.16--0": {
-    "messageformat": "ចំពោះបញ្ហាដែលធ្វើឱ្យប៊ូតុងបង្រួមការហៅ មិនឃើញបង្ហាញឡើង ពេលដែលការហៅនោះកំពុងភ្ជាប់ឡើងវិញនោះ យើងបានដោះស្រាយហើយ។ ឥឡូវនេះ អ្នកលែងមានអារម្មណ៍ថាត្រូវបានផ្តាច់ចេញពីការជជែកមុនៗហើយ ទោះបីជាមានអារម្មណ៍ថាដាច់អ៊ីនធឺណិតក៏ដោយ។"
+  "icu:WhatsNew__v7.18--0": {
+    "messageformat": "ការចេញផ្សាយនេះបង្កើនល្បឿននៃដំណើរការលុបប្រវត្តិសារសន្ទនាវែងៗ។"
   },
-  "icu:WhatsNew__v7.17--0": {
-    "messageformat": "We wanted things to be slicker and quicker for sticker clickers, so we fixed a bug that sometimes prevented Signal from launching the sticker viewer if you tried to open a sticker pack link while the app was closed."
+  "icu:WhatsNew__v7.19--0": {
+    "messageformat": "ប្រសិនបើការហៅផ្សេងទៀតកំពុងហៅឈ្មោះរបស់អ្នក យើងបានបន្ថែមផ្លូវកាត់មួយដើម្បីអាចចេញពីការហៅបច្ចុប្បន្ន ហើយចូលរួមការហៅថ្មីបាន។ អ្នកនឹងត្រូវបានជំរុញឱ្យបញ្ជាក់ពីការចាកចេញរបស់អ្នក ប៉ុន្តែវាអាស្រ័យលើអ្នកទេ ថាតើអ្នកចង់លាទៅមុនឬអត់។"
+  },
+  "icu:WhatsNew__v7.19--1": {
+    "messageformat": "កំណែថ្មីនេះក៏ដោះស្រាយផងដែរនូវបញ្ហាគាំងនៅពេលចាប់ផ្តើមនៅលើ Linux សម្រាប់អ្នកប្រើទាំងឡាយដែលបានកំណត់អ៊ីនធើហ្វេសទៅជា `POSIX`។"
+  },
+  "icu:WhatsNew__v7.20--0": {
+    "messageformat": "Stories with long captions are displayed on a subtle gradient background that improves contrast and makes the text easier to read. Now that people can see what you're saying, feel free to write a couple paragraphs about why something really made you laugh instead of just saying \"lol.\""
+  },
+  "icu:WhatsNew__v7.20--1": {
+    "messageformat": "This release also improves the performance of link preview generation and fixes a bug that caused the Settings window to briefly flash a lovely shade of ultramarine whenever it was closed (instead of just closing right away)."
   }
 }

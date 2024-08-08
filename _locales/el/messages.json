@@ -81,10 +81,16 @@
     "messageformat": "Η έκδοση της βάσης δεδομένων σου δεν ταιριάζει με αυτή την έκδοση του Signal. Βεβαιώσου ότι ανοίγεις την πιο πρόσφατη έκδοση του Signal στον υπολογιστή σου."
   },
   "icu:databaseError__recover__detail": {
-    "messageformat": "A database error occurred. You can copy the error and contact Signal support to help fix the issue. If you need to use Signal right away, you can attempt to recover your data.\n\nContact support by visiting: {link}"
+    "messageformat": "Προέκυψε σφάλμα βάσης δεδομένων. Μπορείς να αντιγράψεις το σφάλμα και να επικοινωνήσεις με την υποστήριξη Signal για να επιλυθεί το πρόβλημα. Εάν πρέπει να χρησιμοποιήσεις το Signal αμέσως, μπορείς να προσπαθήσεις να ανακτήσεις τα δεδομένα σου.\n\nΕπικοινώνησε με την υποστήριξη: {link}"
   },
   "icu:databaseError__recover__button": {
-    "messageformat": "Recover data"
+    "messageformat": "Επαναφορά δεδομένων"
+  },
+  "icu:databaseError__safeStorageBackendChange": {
+    "messageformat": "Δεν είναι δυνατή η πρόσβαση στο κλειδί κρυπτογράφησης της βάσης δεδομένων επειδή το κλειδί κρυπτογράφησης του λειτουργικού συστήματος έχει αλλάξει από {previousBackend} σε {currentBackend}. Αυτό μπορεί να συμβεί αν το περιβάλλον επιφάνειας εργασίας αλλάξει, για παράδειγμα από GNOME σε KDE.\n\nΠήγαινε πίσω στο προηγούμενο περιβάλλον εργασίας."
+  },
+  "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
+    "messageformat": "Δεν είναι δυνατή η πρόσβαση στο κλειδί κρυπτογράφησης της βάσης δεδομένων επειδή το κλειδί κρυπτογράφησης του λειτουργικού συστήματος έχει αλλάξει από {previousBackend} σε {currentBackend}. Αυτό μπορεί να συμβεί αν το περιβάλλον επιφάνειας εργασίας αλλάξει, για παράδειγμα από GNOME σε KDE.\n\nΠήγαινε πίσω στο προηγούμενο περιβάλλον εργασίας ή δοκίμασε να ανοίξεις το Signal με τη σημαία της γραμμής εντολών --password-store=\"{previousBackendFlag}\""
   },
   "icu:mainMenuFile": {
     "messageformat": "&Αρχείο"
@@ -824,8 +830,14 @@
   "icu:cannotUpdateDetail": {
     "messageformat": "Το Signal δεν μπόρεσε να αναβαθμιστεί. {retry} ή επισκέψου το {url} για να το εγκαταστήσεις χειροκίνητα. Μετά, {support} σχετικά με αυτό το πρόβλημα."
   },
+  "icu:cannotUpdateDetail-v2": {
+    "messageformat": "Το Signal δεν μπόρεσε να ενημερωθεί. <retryUpdateButton>Επανάλαβε την ενημέρωση</retryUpdateButton> ή επισκέψου το {url} για χειροκίνητη εγκατάσταση. Έπειτα, <contactSupportLink>επικοινώνησε με την υποστήριξη</contactSupportLink> γι' αυτό το πρόβλημα"
+  },
   "icu:cannotUpdateRequireManualDetail": {
     "messageformat": "Το Signal δεν μπόρεσε να ενημερωθεί. Πήγαινε στο {url} για να το εγκαταστήσεις χειροκίνητα. Έπειτα,{support} γι' αυτό το πρόβλημα."
+  },
+  "icu:cannotUpdateRequireManualDetail-v2": {
+    "messageformat": "Το Signal δεν μπόρεσε να ενημερωθεί. Επισκέψου το {url} για να το εγκαταστήσεις χειροκίνητα. Έπειτα, <contactSupportLink>επικοινώνησε με την υποστήριξη</contactSupportLink> γι' αυτό το πρόβλημα"
   },
   "icu:readOnlyVolume": {
     "messageformat": "Το Signal Desktop μάλλον βρίσκεται σε καραντίνα του macOS, και δεν θα μπορέσει να αναβαθμιστεί αυτόματα. Παρακαλώ προσπάθησε να μετακινήσεις το {app} στο {folder} με το Finder."
@@ -1101,7 +1113,7 @@
     "messageformat": "Συνδεμένες συσκευές"
   },
   "icu:linkNewDevice": {
-    "messageformat": "Σύνδεση νέας συσκεύης"
+    "messageformat": "Σύνδεση νέας συσκευής"
   },
   "icu:Install__learn-more": {
     "messageformat": "Μάθε περισσότερα"
@@ -1119,10 +1131,7 @@
     "messageformat": "Ρυθμίσεις"
   },
   "icu:Install__instructions__3": {
-    "messageformat": "Πάτα το {plusButton} (Android) ή το {linkNewDevice} (iPhone)"
-  },
-  "icu:Install__qr-failed-load": {
-    "messageformat": "Δεν ήταν δυνατή η φόρτωση του κωδικού QR. Έλεγξε τη σύνδεσή σου στο διαδίκτυο και προσπάθησε ξανά. <retry>Επανάληψη</retry>"
+    "messageformat": "Πάτησε {linkNewDevice}"
   },
   "icu:Install__qr-failed-load__error--timeout": {
     "messageformat": "Δεν ήταν δυνατή η φόρτωση του κωδικού QR. Έλεγξε τη σύνδεσή σου και δοκίμασε πάλι."
@@ -1404,13 +1413,13 @@
     "messageformat": "Έχεις αποκλείσει τον/την {name}"
   },
   "icu:calling__blocked-participant": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "Ο/Η {name} έχει αποκλειστεί"
   },
   "icu:calling__block-info-title": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "Ο/Η {name} έχει αποκλειστεί"
   },
   "icu:calling__block-info": {
-    "messageformat": "You won’t receive their audio or video and they won’t receive yours."
+    "messageformat": "Δεν θα λαμβάνεις τον ήχο ή την εικόνα του/της και δεν θα λαμβάνει τα δικά σου."
   },
   "icu:calling__missing-media-keys": {
     "messageformat": "Αδυναμία λήψης ήχου και εικόνας από τον/την {name}"
@@ -2625,10 +2634,10 @@
     "messageformat": "Απόρριψη"
   },
   "icu:declinedIncomingAudioCall": {
-    "messageformat": "Απέρριψες μια κλήση"
+    "messageformat": "Απορρίφθηκε μια κλήση"
   },
   "icu:declinedIncomingVideoCall": {
-    "messageformat": "Απέρριψες μια βιντεοκλήση"
+    "messageformat": "Απορρίφθηκε μια βιντεοκλήση"
   },
   "icu:acceptedIncomingAudioCall": {
     "messageformat": "Εισερχόμενη κλήση"
@@ -2661,10 +2670,10 @@
     "messageformat": "Το Signal θα συνεχίσει να λειτουργεί στην περιοχή ειδοποιήσεων. Μπορείς να το αλλάξεις στις Ρυθμίσεις του Signal."
   },
   "icu:incomingAudioCall": {
-    "messageformat": "Εισερχόμενη κλήση..."
+    "messageformat": "Εισερχόμενη κλήση"
   },
   "icu:incomingVideoCall": {
-    "messageformat": "Εισερχόμενη βιντεοκλήση…"
+    "messageformat": "Εισερχόμενη βιντεοκλήση"
   },
   "icu:outgoingAudioCall": {
     "messageformat": "Εξερχόμενη κλήση"
@@ -2709,7 +2718,7 @@
     "messageformat": "{count, plural, one {{count,number} άτομο} other {{count,number} άτομα}}"
   },
   "icu:CallControls__InfoDisplay--audio-call": {
-    "messageformat": "Ηχητική κλήση"
+    "messageformat": "Φωνητική κλήση"
   },
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "Σύνδεσμος κλήσης"
@@ -2772,16 +2781,16 @@
     "messageformat": "{people, plural, one {{people,number} στην κλήση} other {{people,number} στην κλήση}}"
   },
   "icu:calling__call-notification__ended": {
-    "messageformat": "Η ομαδική κλήση τελείωσε"
+    "messageformat": "Η βιντεοκλήση τελείωσε"
   },
   "icu:calling__call-notification__started-by-someone": {
-    "messageformat": "Ξεκίνησε μια ομαδική κλήση"
+    "messageformat": "Ξεκίνησε μια βιντεοκλήση"
   },
   "icu:calling__call-notification__started-by-you": {
-    "messageformat": "Ξεκίνησες μια ομαδική κλήση"
+    "messageformat": "Ξεκίνησες μια βιντεοκλήση"
   },
   "icu:calling__call-notification__started": {
-    "messageformat": "Ο/Η {name} ξεκίνησε μια ομαδική κλήση"
+    "messageformat": "Ο/Η {name} ξεκίνησε μια βιντεοκλήση"
   },
   "icu:calling__in-another-call-tooltip": {
     "messageformat": "Είσαι ήδη σε κάποια κλήση"
@@ -5424,6 +5433,9 @@
   "icu:CallsList__ItemCallInfo--Missed": {
     "messageformat": "Αναπάντητη"
   },
+  "icu:CallsList__ItemCallInfo--Declined": {
+    "messageformat": "Απορρίφθηκε"
+  },
   "icu:CallsList__ItemCallInfo--GroupCall": {
     "messageformat": "Ομαδική κλήση"
   },
@@ -5437,7 +5449,7 @@
     "messageformat": "Αποχώρηση από την τρέχουσα κλήση;"
   },
   "icu:CallsList__LeaveCallDialogBody": {
-    "messageformat": "Πρέπει να αποχωρήσεις από την τρέχουσα κλήση πριν συνδεθείς σε νέα."
+    "messageformat": "Πρέπει να αποχωρήσεις από την τρέχουσα κλήση πριν ξεκινήσεις ή συνδεθείς σε μια νέα."
   },
   "icu:CallsList__LeaveCallDialogButton--leave": {
     "messageformat": "Αποχώρηση από την κλήση"
@@ -5469,14 +5481,50 @@
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "Σύνδεσμος κλήσης"
   },
+  "icu:CallHistory__DescriptionVideoCall--Default": {
+    "messageformat": "{direction, select, Outgoing {Εξερχόμενη βιντεοκλήση} other {Εισερχόμενη βιντεοκλήση}}"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Missed": {
+    "messageformat": "Αναπάντητη βιντεοκλήση"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Unanswered": {
+    "messageformat": "Αναπάντητη βιντεοκλήση"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Declined": {
+    "messageformat": "Απορρίφθηκε μια βιντεοκλήση"
+  },
   "icu:CallLinkDetails__Join": {
     "messageformat": "Συμμετοχή"
+  },
+  "icu:CallLinkDetails__AddCallNameLabel": {
+    "messageformat": "Προσθήκη ονόματος κλήσης"
+  },
+  "icu:CallLinkDetails__EditCallNameLabel": {
+    "messageformat": "Επεξεργασία ονόματος κλήσης"
+  },
+  "icu:CallLinkDetails__ApproveAllMembersLabel": {
+    "messageformat": "Έγκριση όλων των μελών"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "Αντιγραφή συνδέσμου"
   },
   "icu:CallLinkDetails__ShareLinkViaSignal": {
     "messageformat": "Κοινοποίηση συνδέσμου μέσω Signal"
+  },
+  "icu:CallLinkDetails__DeleteLink": {
+    "messageformat": "Delete link"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Title": {
+    "messageformat": "Delete call link?"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Body": {
+    "messageformat": "This link will no longer work for anyone who has it."
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
+    "messageformat": "Cancel"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Delete": {
+    "messageformat": "Delete"
   },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "Λεπτομέρειες συνδέσμου κλήσης"
@@ -5487,17 +5535,23 @@
   "icu:CallLinkEditModal__AddCallNameLabel": {
     "messageformat": "Προσθήκη ονόματος κλήσης"
   },
+  "icu:CallLinkEditModal__EditCallNameLabel": {
+    "messageformat": "Επεξεργασία ονόματος κλήσης"
+  },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
     "messageformat": "Έγκριση όλων των μελών"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--Off": {
+  "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "Ανενεργό"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--On": {
+  "icu:CallLinkRestrictionsSelect__Option--On": {
     "messageformat": "Ενεργό"
   },
   "icu:CallLinkAddNameModal__Title": {
     "messageformat": "Προσθήκη ονόματος κλήσης"
+  },
+  "icu:CallLinkAddNameModal__Title--Edit": {
+    "messageformat": "Επεξεργασία ονόματος κλήσης"
   },
   "icu:CallLinkAddNameModal__NameLabel": {
     "messageformat": "Όνομα κλήσης"
@@ -5542,10 +5596,19 @@
     "messageformat": "Μικρές τροποποιήσεις, επιδιορθώσεις σφαλμάτων και βελτιώσεις απόδοσης. Ευχαριστούμε που χρησιμοποιείς το Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.16--0": {
-    "messageformat": "Διορθώσαμε ένα σφάλμα που εμπόδιζε την εμφάνιση του κουμπιού ελαχιστοποίησης μιας κλήσης ενώ γινόταν επανασύνδεση της κλήσης."
+  "icu:WhatsNew__v7.18--0": {
+    "messageformat": "Αυτή η έκδοση επιταχύνει τη διαδικασία διαγραφής μεγάλων νημάτων μηνυμάτων."
   },
-  "icu:WhatsNew__v7.17--0": {
-    "messageformat": "We wanted things to be slicker and quicker for sticker clickers, so we fixed a bug that sometimes prevented Signal from launching the sticker viewer if you tried to open a sticker pack link while the app was closed."
+  "icu:WhatsNew__v7.19--0": {
+    "messageformat": "Προσθέσαμε μια συντόμευση για να κλείνεις και να συνδέεσαι σε μια νέα κλήση όταν μια άλλη κλήση είναι ήδη σε εξέλιξη."
+  },
+  "icu:WhatsNew__v7.19--1": {
+    "messageformat": "Αυτή η ενημέρωση διορθώνει επίσης απρόσμενους τερματισμούς λειτουργίας κατά την εκκίνηση σε Linux για χρήστες των οποίων η γλώσσα έχει οριστεί σε `POSIX`."
+  },
+  "icu:WhatsNew__v7.20--0": {
+    "messageformat": "Stories with long captions are displayed on a subtle gradient background that improves contrast and makes the text easier to read. Now that people can see what you're saying, feel free to write a couple paragraphs about why something really made you laugh instead of just saying \"lol.\""
+  },
+  "icu:WhatsNew__v7.20--1": {
+    "messageformat": "This release also improves the performance of link preview generation and fixes a bug that caused the Settings window to briefly flash a lovely shade of ultramarine whenever it was closed (instead of just closing right away)."
   }
 }

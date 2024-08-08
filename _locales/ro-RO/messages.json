@@ -81,10 +81,16 @@
     "messageformat": "Versiunea bazei de date nu se potrivește cu această versiune de Signal. Asigură-te că deschizi cea mai nouă versiune de Signal pe computer."
   },
   "icu:databaseError__recover__detail": {
-    "messageformat": "A database error occurred. You can copy the error and contact Signal support to help fix the issue. If you need to use Signal right away, you can attempt to recover your data.\n\nContact support by visiting: {link}"
+    "messageformat": "A apărut o eroare la baza de date. Poți copia eroarea și contacta serviciul de asistență Signal, pentru a ajuta la remedierea problemei. Dacă trebuie să utilizezi Signal imediat, poți încerca să îți recuperezi datele.\n\nContactează serviciul de asistență vizitând: {link}"
   },
   "icu:databaseError__recover__button": {
-    "messageformat": "Recover data"
+    "messageformat": "Recuperează datele"
+  },
+  "icu:databaseError__safeStorageBackendChange": {
+    "messageformat": "Nu se poate accesa cheia de criptare a bazei de date deoarece backend-ul de criptare al sistemului de operare s-a schimbat de la {previousBackend} la {currentBackend}. Acest lucru se poate întâmpla dacă mediul desktop se schimbă, de exemplu între GNOME și KDE.\n\nTreci la mediul desktop anterior."
+  },
+  "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
+    "messageformat": "Nu se poate accesa cheia de criptare a bazei de date deoarece backend-ul de criptare al sistemului de operare s-a schimbat de la {previousBackend} la {currentBackend}. Acest lucru se poate întâmpla dacă mediul desktop se schimbă, de exemplu între GNOME și KDE.\n\nTreci de la mediul desktop anterior sau încearcă să execuți semnalul cu steagul din linia de comandă --password-store=\"{previousBackendFlag}\""
   },
   "icu:mainMenuFile": {
     "messageformat": "&Fișier"
@@ -824,8 +830,14 @@
   "icu:cannotUpdateDetail": {
     "messageformat": "Signal nu a putut fi actualizat. {retry} sau mergi la {url} pentru a o instala manual. Apoi, {support} în legătură cu această problemă"
   },
+  "icu:cannotUpdateDetail-v2": {
+    "messageformat": "Signal nu s-a putut actualiza. <retryUpdateButton>Reîncearcă actualizarea</retryUpdateButton> sau vizitează {url} ca să-l instalezi manual. Apoi, <contactSupportLink>contactează asistența</contactSupportLink> referitor la problemă"
+  },
   "icu:cannotUpdateRequireManualDetail": {
     "messageformat": "Signal nu a putut fi actualizat. Mergi la {url} pentru a instala manual. Apoi, {support} în legătură cu această problemă"
+  },
+  "icu:cannotUpdateRequireManualDetail-v2": {
+    "messageformat": "Signal nu a putut fi actualizat. Mergi la {url} pentru a-l instala manual. Apoi, <contactSupportLink>contactează asistența</contactSupportLink> despre această problemă"
   },
   "icu:readOnlyVolume": {
     "messageformat": "Signal Desktop se află probabil în carantină macOS, și nu va putea fi actualizat automat. Te rugăm să încearci să muți {app} în {folder} folosind Finder."
@@ -1101,7 +1113,7 @@
     "messageformat": "Dispozitive asociate"
   },
   "icu:linkNewDevice": {
-    "messageformat": "Asociază dispozitiv nou"
+    "messageformat": "Asociază un dispozitiv nou"
   },
   "icu:Install__learn-more": {
     "messageformat": "Află mai multe"
@@ -1119,10 +1131,7 @@
     "messageformat": "Setări"
   },
   "icu:Install__instructions__3": {
-    "messageformat": "Atinge {plusButton} (Android) sau {linkNewDevice} (iPhone)"
-  },
-  "icu:Install__qr-failed-load": {
-    "messageformat": "Codul QR nu a putut fi încărcat. Verifică internetul și încearcă din nou. <retry>Încearcă din nou</retry>"
+    "messageformat": "Atinge {linkNewDevice}"
   },
   "icu:Install__qr-failed-load__error--timeout": {
     "messageformat": "Codul QR nu a putut fi încărcat. Verifică-ți conexiunea și încearcă din nou."
@@ -1200,7 +1209,7 @@
     "messageformat": "Alătură-te apelului"
   },
   "icu:calling__return": {
-    "messageformat": "Întoarce-te la apel"
+    "messageformat": "Întoarcere la apel"
   },
   "icu:calling__lobby-automatically-muted-because-there-are-a-lot-of-people": {
     "messageformat": "Microfonul a fost oprit datorită dimensiuni apelului"
@@ -1404,13 +1413,13 @@
     "messageformat": "Ai blocat pe {name}"
   },
   "icu:calling__blocked-participant": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "{name} este blocat"
   },
   "icu:calling__block-info-title": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "{name} este blocat"
   },
   "icu:calling__block-info": {
-    "messageformat": "You won’t receive their audio or video and they won’t receive yours."
+    "messageformat": "Nu-i vei auzi sau vedea pe interlocutorii tăi iar ei nu te vor auzi sau vedea pe tine."
   },
   "icu:calling__missing-media-keys": {
     "messageformat": "Nu pot primi semnal voce și semnal video de la {name}"
@@ -2625,10 +2634,10 @@
     "messageformat": "Respinge"
   },
   "icu:declinedIncomingAudioCall": {
-    "messageformat": "Ai respins un apel vocal"
+    "messageformat": "Apel video respins"
   },
   "icu:declinedIncomingVideoCall": {
-    "messageformat": "Ai respins un apel video."
+    "messageformat": "Apel video respins"
   },
   "icu:acceptedIncomingAudioCall": {
     "messageformat": "Apel de intrare vocal"
@@ -2661,10 +2670,10 @@
     "messageformat": "Signal va continua să funcționeze în zona de notificări. Poți schimba asta în setările Signal."
   },
   "icu:incomingAudioCall": {
-    "messageformat": "Apel vocal de intrare…"
+    "messageformat": "Apel de intrare vocal"
   },
   "icu:incomingVideoCall": {
-    "messageformat": "Apel de intrare video..."
+    "messageformat": "Apel de intrare video"
   },
   "icu:outgoingAudioCall": {
     "messageformat": "Apel de ieșire vocal"
@@ -2709,7 +2718,7 @@
     "messageformat": "{count, plural, one {{count,number} persoană} few {{count,number} persoane} other {{count,number} persoane}}"
   },
   "icu:CallControls__InfoDisplay--audio-call": {
-    "messageformat": "Apel audio"
+    "messageformat": "Apel vocal"
   },
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "Link de apel"
@@ -2772,16 +2781,16 @@
     "messageformat": "{people, plural, one {{people,number} în apel} few {{people,number} în apel} other {{people,number} în apel}}"
   },
   "icu:calling__call-notification__ended": {
-    "messageformat": "Apelul de grup s-a terminat"
+    "messageformat": "Apelul video s-a încheiat"
   },
   "icu:calling__call-notification__started-by-someone": {
-    "messageformat": "Un apel de grup a fost început"
+    "messageformat": "S-a început un apel video"
   },
   "icu:calling__call-notification__started-by-you": {
-    "messageformat": "Ai început un apel de grup"
+    "messageformat": "Ai început un apel video"
   },
   "icu:calling__call-notification__started": {
-    "messageformat": "{name} a început un apel de grup"
+    "messageformat": "{name} a început un apel video"
   },
   "icu:calling__in-another-call-tooltip": {
     "messageformat": "Ești deja într-un apel"
@@ -5424,6 +5433,9 @@
   "icu:CallsList__ItemCallInfo--Missed": {
     "messageformat": "Ratate"
   },
+  "icu:CallsList__ItemCallInfo--Declined": {
+    "messageformat": "Respins"
+  },
   "icu:CallsList__ItemCallInfo--GroupCall": {
     "messageformat": "Apel de grup"
   },
@@ -5437,7 +5449,7 @@
     "messageformat": "Părăsești apelul curent?"
   },
   "icu:CallsList__LeaveCallDialogBody": {
-    "messageformat": "Trebuie să părăsești apelul curent înainte de a intra într-un nou apel."
+    "messageformat": "Trebuie să părăsești apelul curent înainte să începi sau să intri într-un nou apel."
   },
   "icu:CallsList__LeaveCallDialogButton--leave": {
     "messageformat": "Părăsește apelul"
@@ -5469,14 +5481,50 @@
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "Link de apel"
   },
+  "icu:CallHistory__DescriptionVideoCall--Default": {
+    "messageformat": "{direction, select, Outgoing {Apel de ieșire video} other {Apel de intrare video}}"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Missed": {
+    "messageformat": "Apel video nepreluat"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Unanswered": {
+    "messageformat": "Apel video nepreluat"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Declined": {
+    "messageformat": "Apel video respins"
+  },
   "icu:CallLinkDetails__Join": {
     "messageformat": "Alătură-te"
+  },
+  "icu:CallLinkDetails__AddCallNameLabel": {
+    "messageformat": "Adaugă numele apelului"
+  },
+  "icu:CallLinkDetails__EditCallNameLabel": {
+    "messageformat": "Editează numele apelului"
+  },
+  "icu:CallLinkDetails__ApproveAllMembersLabel": {
+    "messageformat": "Aprobă toți membrii"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "Copiază linkul"
   },
   "icu:CallLinkDetails__ShareLinkViaSignal": {
     "messageformat": "Trimite linkul prin Signal"
+  },
+  "icu:CallLinkDetails__DeleteLink": {
+    "messageformat": "Delete link"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Title": {
+    "messageformat": "Delete call link?"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Body": {
+    "messageformat": "This link will no longer work for anyone who has it."
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
+    "messageformat": "Cancel"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Delete": {
+    "messageformat": "Delete"
   },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "Detalii despre linkul apelului"
@@ -5487,17 +5535,23 @@
   "icu:CallLinkEditModal__AddCallNameLabel": {
     "messageformat": "Adaugă numele apelului"
   },
+  "icu:CallLinkEditModal__EditCallNameLabel": {
+    "messageformat": "Editează numele apelului"
+  },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
     "messageformat": "Aprobă toți membrii"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--Off": {
+  "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "Dezactivat"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--On": {
+  "icu:CallLinkRestrictionsSelect__Option--On": {
     "messageformat": "Activat"
   },
   "icu:CallLinkAddNameModal__Title": {
     "messageformat": "Adaugă numele apelului"
+  },
+  "icu:CallLinkAddNameModal__Title--Edit": {
+    "messageformat": "Editează numele apelului"
   },
   "icu:CallLinkAddNameModal__NameLabel": {
     "messageformat": "Numele apelului"
@@ -5542,10 +5596,19 @@
     "messageformat": "Mici ajustări, soluționări de bug-uri și îmbunătățiri ale performanței. Mersi că folosești Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.16--0": {
-    "messageformat": "Am remediat o eroare care împiedica să apară butonul pentru minimizarea apelului, când apelul se reconecta. Acum nu trebuie să te simți deconectat/ă de la conversațiile precedente, chiar dacă uneori așa se întâmplă pe internet."
+  "icu:WhatsNew__v7.18--0": {
+    "messageformat": "O despărțire rapidă este uneori mai ușoară decât o despărțire lentă, așa că am accelerat procesul de ștergere a conversațiilor cu multe mesaje."
   },
-  "icu:WhatsNew__v7.17--0": {
-    "messageformat": "We wanted things to be slicker and quicker for sticker clickers, so we fixed a bug that sometimes prevented Signal from launching the sticker viewer if you tried to open a sticker pack link while the app was closed."
+  "icu:WhatsNew__v7.19--0": {
+    "messageformat": "Dacă ai un alt apel care te caută, am adăugat o scurtătură ca să părăsești apelul actual și să te alături celuilalt. Ți se va cere să confirmi plecarea, dar depinde de tine dacă îți iei sau nu la revedere mai întâi."
+  },
+  "icu:WhatsNew__v7.19--1": {
+    "messageformat": "Această actualizare corectează, de asemenea, o blocare la pornire pe Linux pentru utilizatorii a căror localizare este setată la `POSIX`."
+  },
+  "icu:WhatsNew__v7.20--0": {
+    "messageformat": "Stories with long captions are displayed on a subtle gradient background that improves contrast and makes the text easier to read. Now that people can see what you're saying, feel free to write a couple paragraphs about why something really made you laugh instead of just saying \"lol.\""
+  },
+  "icu:WhatsNew__v7.20--1": {
+    "messageformat": "This release also improves the performance of link preview generation and fixes a bug that caused the Settings window to briefly flash a lovely shade of ultramarine whenever it was closed (instead of just closing right away)."
   }
 }

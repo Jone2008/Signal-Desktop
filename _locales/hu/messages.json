@@ -81,10 +81,16 @@
     "messageformat": "Az adatbázisod verziója nem egyezik a Signal ezen verziójával. Győződj meg róla, hogy a Signal legújabb verzióját nyitod meg a számítógépeden."
   },
   "icu:databaseError__recover__detail": {
-    "messageformat": "A database error occurred. You can copy the error and contact Signal support to help fix the issue. If you need to use Signal right away, you can attempt to recover your data.\n\nContact support by visiting: {link}"
+    "messageformat": "Adatbázishiba történt. Kimásolhatod a hibát, és kapcsolatba léphetsz a Signal ügyfélszolgálatával a probléma megoldásához. Ha azonnal használnod kell a Signalt, megpróbálhatod helyreállítani az adataid.\n\nLépj kapcsolatba az ügyfélszolgálattal a következő címen: {link}"
   },
   "icu:databaseError__recover__button": {
-    "messageformat": "Recover data"
+    "messageformat": "Adatok helyreállítása"
+  },
+  "icu:databaseError__safeStorageBackendChange": {
+    "messageformat": "Nem lehet hozzáférni az adatbázis titkosítási kulcsához, mert az operációs rendszer titkosítási kulcstartó háttérrendszere {previousBackend} értékről {currentBackend} értékre változott. Ez akkor fordulhat elő, ha az asztali környezet megváltozik, például a GNOME és a KDE között.\n\nKérjük, válts az előző asztali környezetre."
+  },
+  "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
+    "messageformat": "Nem lehet hozzáférni az adatbázis titkosítási kulcsához, mert az operációs rendszer titkosítási kulcstartó háttérrendszere {previousBackend} értékről {currentBackend} értékre változott. Ez akkor fordulhat elő, ha az asztali környezet megváltozik, például a GNOME és a KDE között.\n\nKérjük, válts az előző asztali környezetre, vagy próbáld meg futtatni a Signalt a --password-store=\"{previousBackendFlag}\" parancssori jelzővel."
   },
   "icu:mainMenuFile": {
     "messageformat": "&Fájl"
@@ -824,8 +830,14 @@
   "icu:cannotUpdateDetail": {
     "messageformat": "A Signal Desktop frissítése nem sikerült. {retry} vagy látogass el a {url} címre és telepítsd az új verziót kézzel, majd lépj kapcsolatba velünk a tapasztalt problémával kapcsolatban: {support}."
   },
+  "icu:cannotUpdateDetail-v2": {
+    "messageformat": "A Signal frissítése nem sikerült. <retryUpdateButton>Próbáld újra a frissítést</retryUpdateButton> vagy látogass el a(z) {url} webhelyre a manuális telepítéshez. Ezután <contactSupportLink>vedd fel a kapcsolatot az ügyfélszolgálattal</contactSupportLink> a problémával kapcsolatban."
+  },
   "icu:cannotUpdateRequireManualDetail": {
     "messageformat": "A Signal frissítése nem sikerült. Telepítsd az új verziót manuálisan a {url} weboldalról, majd lépj kapcsolatba velünk, és oszd meg tapasztalataidat: {support}"
+  },
+  "icu:cannotUpdateRequireManualDetail-v2": {
+    "messageformat": "A Signal frissítése nem sikerült. Telepítsd az új verziót manuálisan a {url} weboldalról. Ezután <contactSupportLink>vedd fel a kapcsolatot az ügyfélszolgálattal</contactSupportLink> a problémával kapcsolatban."
   },
   "icu:readOnlyVolume": {
     "messageformat": "A Signal Desktop valószínűleg macOS karanténban fut, és emiatt nem fog tudni automatikusan frissíteni. Próbáld meg áthelyezni a  {app} fájlt a {folder} mappába a Finder segítségével!"
@@ -1101,7 +1113,7 @@
     "messageformat": "Párosított eszközök"
   },
   "icu:linkNewDevice": {
-    "messageformat": "Új eszköz párosítása"
+    "messageformat": "Új eszköz összekapcsolása"
   },
   "icu:Install__learn-more": {
     "messageformat": "Tudj meg többet!"
@@ -1119,10 +1131,7 @@
     "messageformat": "Beállítások"
   },
   "icu:Install__instructions__3": {
-    "messageformat": "Kattints a {plusButton} (Android) vagy {linkNewDevice} (iPhone) gombra"
-  },
-  "icu:Install__qr-failed-load": {
-    "messageformat": "Nem sikerült betölteni a QR-kódot. Ellenőrizd a hálózati kapcsolatot, és próbáld újra. <retry>Újra</retry>"
+    "messageformat": "Koppints az {linkNewDevice} lehetőségre"
   },
   "icu:Install__qr-failed-load__error--timeout": {
     "messageformat": "Nem sikerült betölteni a QR-kódot. Ellenőrizd az internetkapcsolatod, és próbáld újra!"
@@ -1404,13 +1413,13 @@
     "messageformat": "Letiltottad {name} nevű felhasználót"
   },
   "icu:calling__blocked-participant": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "{name} letiltva"
   },
   "icu:calling__block-info-title": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "{name} letiltva"
   },
   "icu:calling__block-info": {
-    "messageformat": "You won’t receive their audio or video and they won’t receive yours."
+    "messageformat": "Nem fogod hallani és látni őket, illetve ők sem téged."
   },
   "icu:calling__missing-media-keys": {
     "messageformat": "{name} hang és kép adása nem megjeleníthető"
@@ -2625,10 +2634,10 @@
     "messageformat": "Elutasítás"
   },
   "icu:declinedIncomingAudioCall": {
-    "messageformat": "Elutasítottál egy hanghívást"
+    "messageformat": "Elutasított hanghívás"
   },
   "icu:declinedIncomingVideoCall": {
-    "messageformat": "Elutasítottál egy videóhívást"
+    "messageformat": "Elutasított videohívás"
   },
   "icu:acceptedIncomingAudioCall": {
     "messageformat": "Bejövő hanghívás"
@@ -2661,10 +2670,10 @@
     "messageformat": "A Signal továbbra is futni fog az értesítési területen. Ezt a Signal beállításaiban módosíthatod."
   },
   "icu:incomingAudioCall": {
-    "messageformat": "Bejövő hanghívás..."
+    "messageformat": "Bejövő hanghívás"
   },
   "icu:incomingVideoCall": {
-    "messageformat": "Bejövő videóhívás…"
+    "messageformat": "Bejövő videóhívás"
   },
   "icu:outgoingAudioCall": {
     "messageformat": "Kimenő hanghívás"
@@ -2772,16 +2781,16 @@
     "messageformat": "{people, plural, one {{people,number} személy a hívásban} other {{people,number} személy a hívásban}}"
   },
   "icu:calling__call-notification__ended": {
-    "messageformat": "A csoporthívás véget ért"
+    "messageformat": "A videohívás véget ért"
   },
   "icu:calling__call-notification__started-by-someone": {
-    "messageformat": "A csoporthívás létrejött."
+    "messageformat": "Elindult egy videohívás"
   },
   "icu:calling__call-notification__started-by-you": {
-    "messageformat": "Elindítottad a csoporthívást"
+    "messageformat": "Videohívást indítottál"
   },
   "icu:calling__call-notification__started": {
-    "messageformat": "{name} elindította a csoporthívást"
+    "messageformat": "{name} videohívást indított"
   },
   "icu:calling__in-another-call-tooltip": {
     "messageformat": "Már beléptél a hívásba"
@@ -5424,6 +5433,9 @@
   "icu:CallsList__ItemCallInfo--Missed": {
     "messageformat": "Nem fogadott"
   },
+  "icu:CallsList__ItemCallInfo--Declined": {
+    "messageformat": "Elutasítva"
+  },
   "icu:CallsList__ItemCallInfo--GroupCall": {
     "messageformat": "Csoporthívás"
   },
@@ -5437,7 +5449,7 @@
     "messageformat": "Kilépsz az aktuális hívásból?"
   },
   "icu:CallsList__LeaveCallDialogBody": {
-    "messageformat": "Egy új híváshoz való csatlakozáshoz előbb ki kell lépned az aktuális hívásból."
+    "messageformat": "Egy új hívás indítása előtt vagy egy új híváshoz való csatlakozáshoz előbb ki kell lépned az aktuális hívásból."
   },
   "icu:CallsList__LeaveCallDialogButton--leave": {
     "messageformat": "Kilépés a hívásból"
@@ -5469,14 +5481,50 @@
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "Híváshivatkozás"
   },
+  "icu:CallHistory__DescriptionVideoCall--Default": {
+    "messageformat": "{direction, select, Outgoing {Kimenő videóhívás} other {Bejövő videóhívás}}"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Missed": {
+    "messageformat": "Nem fogadott videóhívás"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Unanswered": {
+    "messageformat": "Nem fogadott videóhívás"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Declined": {
+    "messageformat": "Elutasított videohívás"
+  },
   "icu:CallLinkDetails__Join": {
     "messageformat": "Csatlakozás"
+  },
+  "icu:CallLinkDetails__AddCallNameLabel": {
+    "messageformat": "Hívásnév megadása"
+  },
+  "icu:CallLinkDetails__EditCallNameLabel": {
+    "messageformat": "Hívás nevének szerkesztése"
+  },
+  "icu:CallLinkDetails__ApproveAllMembersLabel": {
+    "messageformat": "Összes tag jóváhagyása"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "Hivatkozás másolása"
   },
   "icu:CallLinkDetails__ShareLinkViaSignal": {
     "messageformat": "Hivatkozás megosztása a Signalon keresztül"
+  },
+  "icu:CallLinkDetails__DeleteLink": {
+    "messageformat": "Delete link"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Title": {
+    "messageformat": "Delete call link?"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Body": {
+    "messageformat": "This link will no longer work for anyone who has it."
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
+    "messageformat": "Cancel"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Delete": {
+    "messageformat": "Delete"
   },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "Híváslink részletei"
@@ -5487,17 +5535,23 @@
   "icu:CallLinkEditModal__AddCallNameLabel": {
     "messageformat": "Hívásnév megadása"
   },
+  "icu:CallLinkEditModal__EditCallNameLabel": {
+    "messageformat": "Hívás nevének szerkesztése"
+  },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
     "messageformat": "Összes tag jóváhagyása"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--Off": {
+  "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "Ki"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--On": {
+  "icu:CallLinkRestrictionsSelect__Option--On": {
     "messageformat": "Be"
   },
   "icu:CallLinkAddNameModal__Title": {
     "messageformat": "Hívásnév megadása"
+  },
+  "icu:CallLinkAddNameModal__Title--Edit": {
+    "messageformat": "Hívás nevének szerkesztése"
   },
   "icu:CallLinkAddNameModal__NameLabel": {
     "messageformat": "Hívás neve"
@@ -5542,10 +5596,19 @@
     "messageformat": "Apró finomítások, hibajavítások és teljesítménynövelések. Köszönjük, hogy a Signalt használod!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.16--0": {
-    "messageformat": "Kijavítottunk egy hibát, amely megakadályozta, hogy a hívást minimalizáló gomb megjelenjen a hívás újracsatlakozása közben."
+  "icu:WhatsNew__v7.18--0": {
+    "messageformat": "Ez a kiadás felgyorsítja a nagy üzenetszálak törlésének folyamatát."
   },
-  "icu:WhatsNew__v7.17--0": {
-    "messageformat": "We wanted things to be slicker and quicker for sticker clickers, so we fixed a bug that sometimes prevented Signal from launching the sticker viewer if you tried to open a sticker pack link while the app was closed."
+  "icu:WhatsNew__v7.19--0": {
+    "messageformat": "Hozzáadtunk egy parancsikont, amellyel leteheted a telefont, és csatlakozhatsz egy új híváshoz, ha már folyamatban van egy másik hívás."
+  },
+  "icu:WhatsNew__v7.19--1": {
+    "messageformat": "Ez a frissítés kijavítja a Linux rendszerindítási összeomlását is azon felhasználók számára, akiknek a nyelvi beállítása „POSIX”."
+  },
+  "icu:WhatsNew__v7.20--0": {
+    "messageformat": "Stories with long captions are displayed on a subtle gradient background that improves contrast and makes the text easier to read. Now that people can see what you're saying, feel free to write a couple paragraphs about why something really made you laugh instead of just saying \"lol.\""
+  },
+  "icu:WhatsNew__v7.20--1": {
+    "messageformat": "This release also improves the performance of link preview generation and fixes a bug that caused the Settings window to briefly flash a lovely shade of ultramarine whenever it was closed (instead of just closing right away)."
   }
 }

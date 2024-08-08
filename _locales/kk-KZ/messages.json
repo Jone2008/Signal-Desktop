@@ -81,10 +81,16 @@
     "messageformat": "Дерекқордың нұсқасы Signal-дың бұл нұсқасына сәйкес келмейді. Компьютеріңізде Signal-дың соңғы нұсқасын ашып отырғаныңзға көз жеткізіңіз."
   },
   "icu:databaseError__recover__detail": {
-    "messageformat": "A database error occurred. You can copy the error and contact Signal support to help fix the issue. If you need to use Signal right away, you can attempt to recover your data.\n\nContact support by visiting: {link}"
+    "messageformat": "Дерекқорда қате шықты. Ақауды түзету үшін қатені көшіріп, Signal қолдау көрсету қызметіне хабарласа аласыз. Егер Signal-ды дереу қолдану керек болса, деректерді жойып, оны өшіріп, қайта қосыңыз. \n\nҚолдау көрсету орталығына хабарласыңыз: {link}"
   },
   "icu:databaseError__recover__button": {
-    "messageformat": "Recover data"
+    "messageformat": "Деректерді қалпына келтіру"
+  },
+  "icu:databaseError__safeStorageBackendChange": {
+    "messageformat": "Дерекқорды шифрлау кілтіне кіру мүмкін болмады, себебі операциялық жүйені шифрлау кілті серверін ({previousBackend}) {currentBackend} деп өзгерту мүмкін болмады. GNOME және KDE арасында жұмыс үстелінің ортасы өзгерсе, осындай жағдай орын алады.\n\nАлдыңғы жұмыс үстелі ортасына ауысыңыз."
+  },
+  "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
+    "messageformat": "Дерекқорды шифрлау кілтіне кіру мүмкін болмады, себебі операциялық жүйені шифрлау кілті серверін ({previousBackend}) {currentBackend} деп өзгерту мүмкін болмады. GNOME және KDE арасында жұмыс үстелінің ортасы өзгерсе, осындай жағдай орын алады.\n\nАлдыңғы жұмыс орнының ортасына ауысыңыз немесе Signal-ды --password-store=\"{previousBackendFlag}\" пәрмен жолының жалаушасымен іске қосып көріңіз."
   },
   "icu:mainMenuFile": {
     "messageformat": "&Файл"
@@ -824,8 +830,14 @@
   "icu:cannotUpdateDetail": {
     "messageformat": "Signal жаңартылмады. {retry} немесе {url} бетіне кіріп, оны қолмен орнатыңыз. Содан кейін осы мәселе туралы {support}"
   },
+  "icu:cannotUpdateDetail-v2": {
+    "messageformat": "Signal-ды жаңарту мүмкін болмады. <retryUpdateButton>Қайта жаңартып көріңіз</retryUpdateButton> немесе {url} бетіне кіріп, оны қолмен орнатыңыз. Содан кейін бұл мәселе жайында <contactSupportLink>қолдау көрсету орталығына</contactSupportLink> хабарлаңыз."
+  },
   "icu:cannotUpdateRequireManualDetail": {
     "messageformat": "Signal-ды жаңарту мүмкін болмады. {url} бетіне кіріп, оны қолмен орнатыңыз. Содан кейін осы мәселе туралы {support}"
+  },
+  "icu:cannotUpdateRequireManualDetail-v2": {
+    "messageformat": "Signal-ды жаңарту мүмкін болмады. {url} бетіне кіріп, оны қолмен орнатыңыз. Содан кейін бұл мәселе жайында <contactSupportLink>қолдау көрсету орталығына</contactSupportLink> хабарлаңыз."
   },
   "icu:readOnlyVolume": {
     "messageformat": "Signal-дың компьютерлік нұсқасы macOS карантинінде сияқты, сондықтан автоматты түрде жаңартылмайды. Finder арқылы {app} қолданбасын {folder} қалтасына ауыстырып көріңіз."
@@ -1119,10 +1131,7 @@
     "messageformat": "Параметрлер"
   },
   "icu:Install__instructions__3": {
-    "messageformat": "{plusButton} түймесін (Android) немесе {linkNewDevice} түймесін (iPhone) басыңыз"
-  },
-  "icu:Install__qr-failed-load": {
-    "messageformat": "QR коды жүктелмеді. Интернетті тексеріп, қайталап көріңіз. <retry>Қайталап көру</retry>"
+    "messageformat": "{linkNewDevice} сілтемесін басыңыз"
   },
   "icu:Install__qr-failed-load__error--timeout": {
     "messageformat": "QR коды жүктелмеді. Контактіні тексеріп, қайталап көріңіз."
@@ -1404,10 +1413,10 @@
     "messageformat": "{name} деген кісіні блоктадыңыз"
   },
   "icu:calling__blocked-participant": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "{name} блокталды"
   },
   "icu:calling__block-info-title": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "{name} блокталды"
   },
   "icu:calling__block-info": {
     "messageformat": "You won’t receive their audio or video and they won’t receive yours."
@@ -2625,10 +2634,10 @@
     "messageformat": "Қабылдамау"
   },
   "icu:declinedIncomingAudioCall": {
-    "messageformat": "Дауыстық қоңырауды көтермедіңіз"
+    "messageformat": "Қабылданбаған дауыстық қоңырау"
   },
   "icu:declinedIncomingVideoCall": {
-    "messageformat": "Сіз видеоқоңырауды қабылдамадыңыз"
+    "messageformat": "Қабылданбаған видеоқоңырау"
   },
   "icu:acceptedIncomingAudioCall": {
     "messageformat": "Кіріс дауыстық қоңырау"
@@ -2661,10 +2670,10 @@
     "messageformat": "Signal хабарландырулар аймағында жұмыс істеп тұра береді. Signal параметрлеріне кіріп, оны өзгертуіңізге болады."
   },
   "icu:incomingAudioCall": {
-    "messageformat": "Кіріс дауыстық қоңырау..."
+    "messageformat": "Кіріс дауыстық қоңырау"
   },
   "icu:incomingVideoCall": {
-    "messageformat": "Кіріс видеоқоңырау..."
+    "messageformat": "Кіріс видеоқоңырау"
   },
   "icu:outgoingAudioCall": {
     "messageformat": "Шығыс дауыстық қоңырау"
@@ -2709,7 +2718,7 @@
     "messageformat": "{count, plural, one {{count,number} адам} other {{count,number} адам}}"
   },
   "icu:CallControls__InfoDisplay--audio-call": {
-    "messageformat": "Аудиоқоңырау"
+    "messageformat": "Дауыстық қоңырау"
   },
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "Қоңырау сілтемесі"
@@ -2772,16 +2781,16 @@
     "messageformat": "{people, plural, one {Қоңырауда {people,number}} other {Қоңырауда {people,number}}}"
   },
   "icu:calling__call-notification__ended": {
-    "messageformat": "Топтық қоңырау аяқталды"
+    "messageformat": "Видеоқоңырау аяқталды"
   },
   "icu:calling__call-notification__started-by-someone": {
-    "messageformat": "Топтық қоңырау басталды"
+    "messageformat": "Видеоқоңырау басталды"
   },
   "icu:calling__call-notification__started-by-you": {
-    "messageformat": "Топтық қоңырау бастадыңыз"
+    "messageformat": "Видеоқоңырауды бастадыңыз"
   },
   "icu:calling__call-notification__started": {
-    "messageformat": "{name} топтық қоңырауды бастады"
+    "messageformat": "{name} видеоқоңырау бастады"
   },
   "icu:calling__in-another-call-tooltip": {
     "messageformat": "Сіздің қоңырауға қатысып жатырсыз"
@@ -5424,6 +5433,9 @@
   "icu:CallsList__ItemCallInfo--Missed": {
     "messageformat": "Қабылданбаған"
   },
+  "icu:CallsList__ItemCallInfo--Declined": {
+    "messageformat": "Қабылданбады"
+  },
   "icu:CallsList__ItemCallInfo--GroupCall": {
     "messageformat": "Топтық қоңырау"
   },
@@ -5437,7 +5449,7 @@
     "messageformat": "Қазіргі қоңыраудан шығу керек пе?"
   },
   "icu:CallsList__LeaveCallDialogBody": {
-    "messageformat": "Жаңа қоңырауға қосылмас бұрын, қазіргі қоңыраудан шығуыңыз керек."
+    "messageformat": "Жаңа қоңырауды бастамас немесе оған қосылмас бұрын қазіргі қоңыраудан шығуыңыз керек."
   },
   "icu:CallsList__LeaveCallDialogButton--leave": {
     "messageformat": "Қоңыраудан шығу"
@@ -5469,14 +5481,50 @@
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "Қоңырау сілтемесі"
   },
+  "icu:CallHistory__DescriptionVideoCall--Default": {
+    "messageformat": "{direction, select, Outgoing {Шығыс видеоқоңырау} other {Кіріс видеоқоңырау}}"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Missed": {
+    "messageformat": "Видео қоңырауды өткізіп алдыңыз"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Unanswered": {
+    "messageformat": "Жауап берілмеген видеоқоңырау"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Declined": {
+    "messageformat": "Қабылданбаған видеоқоңырау"
+  },
   "icu:CallLinkDetails__Join": {
     "messageformat": "Қосылу"
+  },
+  "icu:CallLinkDetails__AddCallNameLabel": {
+    "messageformat": "Қоңырау атын қосу"
+  },
+  "icu:CallLinkDetails__EditCallNameLabel": {
+    "messageformat": "Қоңырау атын өңдеу"
+  },
+  "icu:CallLinkDetails__ApproveAllMembersLabel": {
+    "messageformat": "Барлық мүшені мақұлдау"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "Сілтемені көшіру"
   },
   "icu:CallLinkDetails__ShareLinkViaSignal": {
     "messageformat": "Сілтемені Signal арқылы бөлісу"
+  },
+  "icu:CallLinkDetails__DeleteLink": {
+    "messageformat": "Delete link"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Title": {
+    "messageformat": "Delete call link?"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Body": {
+    "messageformat": "This link will no longer work for anyone who has it."
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
+    "messageformat": "Cancel"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Delete": {
+    "messageformat": "Delete"
   },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "Қоңырауға сілтеме мәліметтері"
@@ -5487,17 +5535,23 @@
   "icu:CallLinkEditModal__AddCallNameLabel": {
     "messageformat": "Қоңырау атын қосу"
   },
+  "icu:CallLinkEditModal__EditCallNameLabel": {
+    "messageformat": "Қоңырау атын өңдеу"
+  },
   "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
     "messageformat": "Барлық мүшені мақұлдау"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--Off": {
+  "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "Өшіру"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--On": {
+  "icu:CallLinkRestrictionsSelect__Option--On": {
     "messageformat": "Қосу"
   },
   "icu:CallLinkAddNameModal__Title": {
     "messageformat": "Қоңырау атын қосу"
+  },
+  "icu:CallLinkAddNameModal__Title--Edit": {
+    "messageformat": "Қоңырау атын өңдеу"
   },
   "icu:CallLinkAddNameModal__NameLabel": {
     "messageformat": "Қоңырау аты"
@@ -5542,10 +5596,19 @@
     "messageformat": "Кішігірім түзетпелер жасалды, ақаулар жөнделді және жұмысы жақсартылды. Signal-ды қолданғаныңыз үшін рақмет!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.16--0": {
-    "messageformat": "Қоңырау қайта қосылып жатқанда қоңыраудың пайда болуын барынша азайтуға кедергі келтірген ақауды түзеттік. Интернет ажырап тұрса да, алдыңғы чаттардан ажырамайтын боласыз."
+  "icu:WhatsNew__v7.18--0": {
+    "messageformat": "Бұл шығарылымда үлкен хаттар тізбегін жою процесінің жылдамдығы артты."
   },
-  "icu:WhatsNew__v7.17--0": {
-    "messageformat": "We wanted things to be slicker and quicker for sticker clickers, so we fixed a bug that sometimes prevented Signal from launching the sticker viewer if you tried to open a sticker pack link while the app was closed."
+  "icu:WhatsNew__v7.19--0": {
+    "messageformat": "Егер басқа біреу қоңырау шалып жатса, қазіргі қоңыраудан шығып, жаңа қоңырауға қосылуға мүмкіндік беретін түймелер тіркесімін қостық. Шықпас бұрын алдымен растау сұралады, бірақ қоңыраудан шығу-шықпау өз еркіңізде."
+  },
+  "icu:WhatsNew__v7.19--1": {
+    "messageformat": "Бұл жаңа нұсқада тілі \"POSIX\" деп орнатылған пайдаланушылар үшін Linux жүйесі іске қосылғандағы қателер түзетілді."
+  },
+  "icu:WhatsNew__v7.20--0": {
+    "messageformat": "Stories with long captions are displayed on a subtle gradient background that improves contrast and makes the text easier to read. Now that people can see what you're saying, feel free to write a couple paragraphs about why something really made you laugh instead of just saying \"lol.\""
+  },
+  "icu:WhatsNew__v7.20--1": {
+    "messageformat": "This release also improves the performance of link preview generation and fixes a bug that caused the Settings window to briefly flash a lovely shade of ultramarine whenever it was closed (instead of just closing right away)."
   }
 }

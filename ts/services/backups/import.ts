@@ -9,7 +9,7 @@ import { Writable } from 'stream';
 import { isNumber } from 'lodash';
 
 import { Backups, SignalService } from '../../protobuf';
-import Data from '../../sql/Client';
+import { DataWriter } from '../../sql/Client';
 import type { StoryDistributionWithMembersType } from '../../sql/Interface';
 import * as log from '../../logging/log';
 import { GiftBadgeStates } from '../../components/conversation/Message';
@@ -23,6 +23,7 @@ import {
 import { isStoryDistributionId } from '../../types/StoryDistributionId';
 import * as Errors from '../../types/errors';
 import { PaymentEventKind } from '../../types/Payment';
+import { MessageRequestResponseEvent } from '../../types/MessageRequestResponseEvent';
 import {
   ContactFormType,
   AddressType as ContactAddressType,
@@ -112,14 +113,14 @@ async function processConversationOpBatch(
       `updates=${updates.length}`
   );
 
-  await Data.saveConversations(saves);
-  await Data.updateConversations(updates);
+  await DataWriter.saveConversations(saves);
+  await DataWriter.updateConversations(updates);
 }
 async function processMessagesBatch(
   ourAci: AciString,
   batch: ReadonlyArray<MessageAttributesType>
 ): Promise<void> {
-  const ids = await Data.saveMessages(batch, {
+  const ids = await DataWriter.saveMessages(batch, {
     forceSave: true,
     ourAci,
   });
@@ -138,7 +139,7 @@ async function processMessagesBatch(
 
     if (editHistory?.length) {
       drop(
-        Data.saveEditedMessages(
+        DataWriter.saveEditedMessages(
           attributes,
           ourAci,
           editHistory.slice(0, -1).map(({ timestamp }) => ({
@@ -548,10 +549,10 @@ export class BackupImportStream extends Writable {
       'preferContactAvatars',
       accountSettings?.preferContactAvatars === true
     );
-    if (accountSettings?.universalExpireTimer) {
+    if (accountSettings?.universalExpireTimerSeconds) {
       await storage.put(
         'universalExpireTimer',
-        accountSettings.universalExpireTimer
+        accountSettings.universalExpireTimerSeconds
       );
     }
     await storage.put(
@@ -646,6 +647,12 @@ export class BackupImportStream extends Writable {
       await window.storage.put(
         'defaultWallpaperPreset',
         defaultChatStyle.wallpaperPreset
+      );
+    }
+    if (defaultChatStyle.dimWallpaperInDarkMode != null) {
+      await window.storage.put(
+        'defaultDimWallpaperInDarkMode',
+        defaultChatStyle.dimWallpaperInDarkMode
       );
     }
 
@@ -966,7 +973,7 @@ export class BackupImportStream extends Writable {
       };
     }
 
-    await Data.createNewStoryDistribution(result);
+    await DataWriter.createNewStoryDistribution(result);
   }
 
   private async fromChat(chat: Backups.IChat): Promise<void> {
@@ -1011,6 +1018,9 @@ export class BackupImportStream extends Writable {
     if (chatStyle.customColorData != null) {
       conversation.customColor = chatStyle.customColorData.value;
       conversation.customColorId = chatStyle.customColorData.id;
+    }
+    if (chatStyle.dimWallpaperInDarkMode != null) {
+      conversation.dimWallpaperInDarkMode = chatStyle.dimWallpaperInDarkMode;
     }
 
     this.updateConversation(conversation);
@@ -1731,10 +1741,9 @@ export class BackupImportStream extends Writable {
       const { expiresInMs } = updateMessage.expirationTimerChange;
 
       const sourceServiceId = author?.serviceId ?? aboutMe.aci;
-      const expireTimer =
-        isNumber(expiresInMs) && expiresInMs
-          ? DurationInSeconds.fromMillis(expiresInMs)
-          : DurationInSeconds.fromSeconds(0);
+      const expireTimer = DurationInSeconds.fromMillis(
+        expiresInMs?.toNumber() ?? 0
+      );
 
       return {
         message: {
@@ -2359,10 +2368,9 @@ export class BackupImportStream extends Writable {
           );
         }
         const sourceServiceId = fromAciObject(Aci.fromUuidBytes(updaterAci));
-        const expireTimer =
-          isNumber(expiresInMs) && expiresInMs
-            ? DurationInSeconds.fromMillis(expiresInMs)
-            : undefined;
+        const expireTimer = expiresInMs
+          ? DurationInSeconds.fromMillis(expiresInMs.toNumber())
+          : undefined;
         additionalMessages.push({
           type: 'timer-notification',
           sourceServiceId,
@@ -2443,6 +2451,7 @@ export class BackupImportStream extends Writable {
     }
   ): Promise<Partial<MessageAttributesType> | undefined> {
     const { Type } = Backups.SimpleChatUpdate;
+    strictAssert(simpleUpdate.type != null, 'Simple update missing type');
     switch (simpleUpdate.type) {
       case Type.END_SESSION:
         return {
@@ -2483,7 +2492,7 @@ export class BackupImportStream extends Writable {
         return {
           type: 'delivery-issue',
         };
-      case Type.BOOST_REQUEST:
+      case Type.RELEASE_CHANNEL_DONATION_REQUEST:
         log.warn('backups: dropping boost request from release notes');
         return undefined;
       case Type.PAYMENTS_ACTIVATED:
@@ -2505,8 +2514,13 @@ export class BackupImportStream extends Writable {
           requiredProtocolVersion:
             SignalService.DataMessage.ProtocolVersion.CURRENT - 1,
         };
+      case Type.REPORTED_SPAM:
+        return {
+          type: 'message-request-response-event',
+          messageRequestResponseEvent: MessageRequestResponseEvent.SPAM,
+        };
       default:
-        throw new Error('Not implemented');
+        throw new Error(`Unsupported update type: ${simpleUpdate.type}`);
     }
   }
 
@@ -2575,7 +2589,7 @@ export class BackupImportStream extends Writable {
       }
 
       customColors.colors[uuid] = value;
-      this.customColorById.set(color.id || 0, {
+      this.customColorById.set(color.id?.toNumber() || 0, {
         id: uuid,
         value,
       });
@@ -2596,11 +2610,13 @@ export class BackupImportStream extends Writable {
         wallpaperPreset: undefined,
         color: 'ultramarine',
         customColorData: undefined,
+        dimWallpaperInDarkMode: undefined,
       };
     }
 
     let wallpaperPhotoPointer: Uint8Array | undefined;
     let wallpaperPreset: number | undefined;
+    const dimWallpaperInDarkMode = dropNull(chatStyle.dimWallpaperInDarkMode);
 
     if (chatStyle.wallpaperPhoto) {
       wallpaperPhotoPointer = Backups.FilePointer.encode(
@@ -2693,14 +2709,22 @@ export class BackupImportStream extends Writable {
     } else {
       strictAssert(chatStyle.customColorId != null, 'Missing custom color id');
 
-      const entry = this.customColorById.get(chatStyle.customColorId);
+      const entry = this.customColorById.get(
+        chatStyle.customColorId.toNumber()
+      );
       strictAssert(entry != null, 'Missing custom color');
 
       color = 'custom';
       customColorData = entry;
     }
 
-    return { wallpaperPhotoPointer, wallpaperPreset, color, customColorData };
+    return {
+      wallpaperPhotoPointer,
+      wallpaperPreset,
+      color,
+      customColorData,
+      dimWallpaperInDarkMode,
+    };
   }
 }
 
