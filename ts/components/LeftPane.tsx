@@ -56,8 +56,15 @@ import {
 import { ContextMenu } from './ContextMenu';
 import { EditState as ProfileEditorEditState } from './ProfileEditor';
 import type { UnreadStats } from '../util/countUnreadStats';
+import { BackupMediaDownloadProgress } from './BackupMediaDownloadProgress';
 
 export type PropsType = {
+  backupMediaDownloadProgress: {
+    totalBytes: number;
+    downloadedBytes: number;
+    isPaused: boolean;
+    downloadBannerDismissed: boolean;
+  };
   otherTabsUnreadStats: UnreadStats;
   hasExpiredDialog: boolean;
   hasFailedStorySends: boolean;
@@ -120,6 +127,12 @@ export type PropsType = {
   composeReplaceAvatar: ReplaceAvatarActionType;
   composeSaveAvatarToDisk: SaveAvatarToDiskActionType;
   createGroup: () => void;
+  dismissBackupMediaDownloadBanner: () => void;
+  pauseBackupMediaDownload: () => void;
+  resumeBackupMediaDownload: () => void;
+  cancelBackupMediaDownload: () => void;
+  endConversationSearch: () => void;
+  endSearch: () => void;
   navTabsCollapsed: boolean;
   openUsernameReservationModal: () => void;
   onOutgoingAudioCallInConversation: (conversationId: string) => void;
@@ -137,6 +150,7 @@ export type PropsType = {
   showFindByUsername: () => void;
   showFindByPhoneNumber: () => void;
   showConversation: ShowConversationType;
+  preloadConversation: (conversationId: string) => void;
   showInbox: () => void;
   startComposing: () => void;
   startSearch: () => unknown;
@@ -170,8 +184,10 @@ export type PropsType = {
 } & LookupConversationWithoutServiceIdActionsType;
 
 export function LeftPane({
+  backupMediaDownloadProgress,
   otherTabsUnreadStats,
   blockConversation,
+  cancelBackupMediaDownload,
   challengeStatus,
   clearConversationSearch,
   clearGroupCreationError,
@@ -183,6 +199,8 @@ export function LeftPane({
   composeSaveAvatarToDisk,
   crashReportCount,
   createGroup,
+  endConversationSearch,
+  endSearch,
   getPreferredBadge,
   hasExpiredDialog,
   hasFailedStorySends,
@@ -200,7 +218,9 @@ export function LeftPane({
   onOutgoingVideoCallInConversation,
 
   openUsernameReservationModal,
+  pauseBackupMediaDownload,
   preferredWidthFromStorage,
+  preloadConversation,
   removeConversation,
   renderCaptchaDialog,
   renderCrashReportDialog,
@@ -211,6 +231,7 @@ export function LeftPane({
   renderRelinkDialog,
   renderUpdateDialog,
   renderToastManager,
+  resumeBackupMediaDownload,
   savePreferredLeftPaneWidth,
   searchInConversation,
   selectedConversationId,
@@ -241,6 +262,7 @@ export function LeftPane({
   usernameCorrupted,
   usernameLinkCorrupted,
   updateSearchTerm,
+  dismissBackupMediaDownloadBanner,
 }: PropsType): JSX.Element {
   const previousModeSpecificProps = usePrevious(
     modeSpecificProps,
@@ -468,6 +490,10 @@ export function LeftPane({
     startSearch,
   ]);
 
+  const backgroundNode = helper.getBackgroundNode({
+    i18n,
+  });
+
   const preRowsNode = helper.getPreRowsNode({
     clearConversationSearch,
     clearGroupCreationError,
@@ -624,6 +650,27 @@ export function LeftPane({
     dialogs.push({ key: 'banner', dialog: maybeBanner });
   }
 
+  const hasMediaBeenQueuedForBackup =
+    backupMediaDownloadProgress?.totalBytes > 0;
+  if (
+    hasMediaBeenQueuedForBackup &&
+    !backupMediaDownloadProgress.downloadBannerDismissed
+  ) {
+    dialogs.push({
+      key: 'backupMediaDownload',
+      dialog: (
+        <BackupMediaDownloadProgress
+          i18n={i18n}
+          {...backupMediaDownloadProgress}
+          handleClose={dismissBackupMediaDownloadBanner}
+          handlePause={pauseBackupMediaDownload}
+          handleResume={resumeBackupMediaDownload}
+          handleCancel={cancelBackupMediaDownload}
+        />
+      ),
+    });
+  }
+
   const hideHeader =
     modeSpecificProps.mode === LeftPaneMode.Archive ||
     modeSpecificProps.mode === LeftPaneMode.Compose ||
@@ -667,10 +714,11 @@ export function LeftPane({
             }}
             portalToRoot
           >
-            {({ openMenu, onKeyDown }) => {
+            {({ onClick, onKeyDown, ref }) => {
               return (
                 <NavSidebarActionButton
-                  onClick={openMenu}
+                  ref={ref}
+                  onClick={onClick}
                   onKeyDown={onKeyDown}
                   icon={<span className="module-left-pane__moreActionsIcon" />}
                   label="More Actions"
@@ -681,6 +729,7 @@ export function LeftPane({
         </>
       }
     >
+      {backgroundNode}
       <nav
         className={classNames(
           'module-left-pane',
@@ -704,6 +753,8 @@ export function LeftPane({
             {helper.getSearchInput({
               clearConversationSearch,
               clearSearch,
+              endConversationSearch,
+              endSearch,
               i18n,
               onChangeComposeSearchTerm: event => {
                 setComposeSearchTerm(event.target.value);
@@ -764,6 +815,7 @@ export function LeftPane({
                 }
                 showConversation={showConversation}
                 blockConversation={blockConversation}
+                onPreloadConversation={preloadConversation}
                 onSelectConversation={onSelectConversation}
                 onOutgoingAudioCallInConversation={
                   onOutgoingAudioCallInConversation

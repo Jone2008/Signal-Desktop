@@ -1,7 +1,7 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isEqual, isNumber } from 'lodash';
+import { isEqual } from 'lodash';
 import Long from 'long';
 
 import { uuidToBytes, bytesToUuid } from '../util/uuidToBytes';
@@ -59,12 +59,27 @@ import type {
   StoryDistributionWithMembersType,
   StickerPackInfoType,
 } from '../sql/Interface';
-import dataInterface from '../sql/Client';
+import { DataReader, DataWriter } from '../sql/Client';
 import { MY_STORY_ID, StorySendMode } from '../types/Stories';
 import { findAndDeleteOnboardingStoryIfExists } from '../util/findAndDeleteOnboardingStoryIfExists';
 import { downloadOnboardingStory } from '../util/downloadOnboardingStory';
 import { drop } from '../util/drop';
 import { redactExtendedStorageID } from '../util/privacy';
+import type {
+  CallLinkRecord,
+  DefunctCallLinkType,
+  PendingCallLinkType,
+} from '../types/CallLink';
+import {
+  callLinkFromRecord,
+  fromRootKeyBytes,
+  getRoomIdFromRootKeyString,
+  toRootKeyBytes,
+} from '../util/callLinksRingrtc';
+import { fromAdminKeyBytes, toAdminKeyBytes } from '../util/callLinks';
+import { isOlderThan } from '../util/timestamp';
+import { getMessageQueueTime } from '../util/getMessageQueueTime';
+import { callLinkRefreshJobQueue } from '../jobs/callLinkRefreshJobQueue';
 
 const MY_STORY_BYTES = uuidToBytes(MY_STORY_ID);
 
@@ -603,6 +618,58 @@ export function toStickerPackRecord(
   return stickerPackRecord;
 }
 
+// callLinkDbRecord exposes additional fields not available on CallLinkType
+export function toCallLinkRecord(
+  callLinkDbRecord: CallLinkRecord
+): Proto.CallLinkRecord {
+  strictAssert(callLinkDbRecord.rootKey, 'toCallLinkRecord: no rootKey');
+
+  const callLinkRecord = new Proto.CallLinkRecord();
+
+  callLinkRecord.rootKey = callLinkDbRecord.rootKey;
+  if (callLinkDbRecord.deleted === 1) {
+    // adminKey is intentionally omitted for deleted call links.
+    callLinkRecord.deletedAtTimestampMs = Long.fromNumber(
+      callLinkDbRecord.deletedAt || new Date().getTime()
+    );
+  } else {
+    strictAssert(
+      callLinkDbRecord.adminKey,
+      'toCallLinkRecord: no adminPasskey'
+    );
+    callLinkRecord.adminPasskey = callLinkDbRecord.adminKey;
+  }
+
+  if (callLinkDbRecord.storageUnknownFields) {
+    callLinkRecord.$unknownFields = [callLinkDbRecord.storageUnknownFields];
+  }
+
+  return callLinkRecord;
+}
+
+export function toDefunctOrPendingCallLinkRecord(
+  callLink: DefunctCallLinkType | PendingCallLinkType
+): Proto.CallLinkRecord {
+  const rootKey = toRootKeyBytes(callLink.rootKey);
+  const adminKey = callLink.adminKey
+    ? toAdminKeyBytes(callLink.adminKey)
+    : null;
+
+  strictAssert(rootKey, 'toDefunctOrPendingCallLinkRecord: no rootKey');
+  strictAssert(adminKey, 'toDefunctOrPendingCallLinkRecord: no adminPasskey');
+
+  const callLinkRecord = new Proto.CallLinkRecord();
+
+  callLinkRecord.rootKey = rootKey;
+  callLinkRecord.adminPasskey = adminKey;
+
+  if (callLink.storageUnknownFields) {
+    callLinkRecord.$unknownFields = [callLink.storageUnknownFields];
+  }
+
+  return callLinkRecord;
+}
+
 type MessageRequestCapableRecord = Proto.IContactRecord | Proto.IGroupV1Record;
 
 function applyMessageRequestState(
@@ -976,32 +1043,31 @@ export async function mergeGroupV2Record(
 
   details = details.concat(extraDetails);
 
-  const isGroupNewToUs = !isNumber(conversation.get('revision'));
-  const isFirstSync = !window.storage.get('storageFetchComplete');
-  const dropInitialJoinMessage = isFirstSync;
-
   if (isGroupV1(conversation.attributes)) {
     // If we found a GroupV1 conversation from this incoming GroupV2 record, we need to
     //   migrate it!
 
     // We don't await this because this could take a very long time, waiting for queues to
     //   empty, etc.
-    void waitThenRespondToGroupV2Migration({
-      conversation,
-    });
-  } else if (isGroupNewToUs) {
-    // We don't need to update GroupV2 groups all the time. We fetch group state the first
-    //   time we hear about these groups, from then on we rely on incoming messages or
-    //   the user opening that conversation.
+    drop(
+      waitThenRespondToGroupV2Migration({
+        conversation,
+      })
+    );
+  } else {
+    const isFirstSync = !window.storage.get('storageFetchComplete');
+    const dropInitialJoinMessage = isFirstSync;
 
     // We don't await this because this could take a very long time, waiting for queues to
     //   empty, etc.
-    void waitThenMaybeUpdateGroup(
-      {
-        conversation,
-        dropInitialJoinMessage,
-      },
-      { viaFirstStorageSync: isFirstSync }
+    drop(
+      waitThenMaybeUpdateGroup(
+        {
+          conversation,
+          dropInitialJoinMessage,
+        },
+        { viaFirstStorageSync: isFirstSync }
+      )
     );
   }
 
@@ -1095,7 +1161,7 @@ export async function mergeContactRecord(
   if (contactRecord.profileKey && contactRecord.profileKey.length > 0) {
     needsProfileFetch = await conversation.setProfileKey(
       Bytes.toBase64(contactRecord.profileKey),
-      { viaStorageServiceSync: true }
+      { viaStorageServiceSync: true, reason: 'mergeContactRecord' }
     );
   }
 
@@ -1353,7 +1419,7 @@ export async function mergeAccountRecord(
     : PhoneNumberDiscoverability.Discoverable;
   await window.storage.put('phoneNumberDiscoverability', discoverability);
 
-  if (profileKey) {
+  if (profileKey && profileKey.byteLength > 0) {
     void ourProfileKeyService.set(profileKey);
   }
 
@@ -1615,14 +1681,14 @@ export async function mergeAccountRecord(
   });
 
   let needsProfileFetch = false;
-  if (profileKey && profileKey.length > 0) {
+  if (profileKey && profileKey.byteLength > 0) {
     needsProfileFetch = await conversation.setProfileKey(
       Bytes.toBase64(profileKey),
-      { viaStorageServiceSync: true }
+      { viaStorageServiceSync: true, reason: 'mergeAccountRecord' }
     );
 
     const avatarUrl = dropNull(accountRecord.avatarUrl);
-    await conversation.setProfileAvatar(avatarUrl, profileKey);
+    await conversation.setAndMaybeFetchProfileAvatar(avatarUrl, profileKey);
     await window.storage.put('avatarUrl', avatarUrl);
   }
 
@@ -1682,7 +1748,7 @@ export async function mergeStoryDistributionListRecord(
   }
 
   const localStoryDistributionList =
-    await dataInterface.getStoryDistributionWithMembers(listId);
+    await DataReader.getStoryDistributionWithMembers(listId);
 
   const remoteListMembers: Array<ServiceIdString> = (
     storyDistributionListRecord.recipientServiceIds || []
@@ -1714,7 +1780,7 @@ export async function mergeStoryDistributionListRecord(
   };
 
   if (!localStoryDistributionList) {
-    await dataInterface.createNewStoryDistribution(storyDistribution);
+    await DataWriter.createNewStoryDistribution(storyDistribution);
 
     const shouldSave = false;
     window.reduxActions.storyDistributionLists.createDistributionList(
@@ -1766,7 +1832,7 @@ export async function mergeStoryDistributionListRecord(
     );
 
   details.push('updated');
-  await dataInterface.modifyStoryDistributionWithMembers(storyDistribution, {
+  await DataWriter.modifyStoryDistributionWithMembers(storyDistribution, {
     toAdd,
     toRemove,
   });
@@ -1804,7 +1870,7 @@ export async function mergeStickerPackRecord(
   const details: Array<string> = [];
   const id = Bytes.toHex(stickerPackRecord.packId);
 
-  const localStickerPack = await dataInterface.getStickerPackInfo(id);
+  const localStickerPack = await DataReader.getStickerPackInfo(id);
 
   if (stickerPackRecord.$unknownFields) {
     details.push('adding unknown fields');
@@ -1837,7 +1903,7 @@ export async function mergeStickerPackRecord(
       position:
         'position' in stickerPackRecord
           ? stickerPackRecord.position
-          : localStickerPack?.position ?? undefined,
+          : (localStickerPack?.position ?? undefined),
       storageID,
       storageVersion,
       storageUnknownFields,
@@ -1897,11 +1963,168 @@ export async function mergeStickerPackRecord(
     }
   }
 
-  await dataInterface.updateStickerPackInfo(stickerPack);
+  await DataWriter.updateStickerPackInfo(stickerPack);
 
   return {
     details: [...details, ...conflictDetails],
     hasConflict,
+    oldStorageID,
+    oldStorageVersion,
+  };
+}
+
+export async function mergeCallLinkRecord(
+  storageID: string,
+  storageVersion: number,
+  callLinkRecord: Proto.ICallLinkRecord
+): Promise<MergeResultType> {
+  const redactedStorageID = redactExtendedStorageID({
+    storageID,
+    storageVersion,
+  });
+  // callLinkRecords must have rootKey
+  if (!callLinkRecord.rootKey) {
+    return { hasConflict: false, shouldDrop: true, details: ['no rootKey'] };
+  }
+
+  const details: Array<string> = [];
+
+  const rootKeyString = fromRootKeyBytes(callLinkRecord.rootKey);
+  const adminKeyString = callLinkRecord.adminPasskey
+    ? fromAdminKeyBytes(callLinkRecord.adminPasskey)
+    : null;
+
+  const roomId = getRoomIdFromRootKeyString(rootKeyString);
+  const logId = `mergeCallLinkRecord(${redactedStorageID}, ${roomId})`;
+
+  const localCallLinkDbRecord =
+    await DataReader.getCallLinkRecordByRoomId(roomId);
+
+  // Note deletedAtTimestampMs can be 0
+  const deletedAtTimestampMs = callLinkRecord.deletedAtTimestampMs?.toNumber();
+  const deletedAt = deletedAtTimestampMs || null;
+  const shouldDrop = Boolean(
+    deletedAt && isOlderThan(deletedAt, getMessageQueueTime())
+  );
+  if (shouldDrop) {
+    details.push(
+      `expired deleted call link deletedAt=${deletedAt}; scheduling for removal`
+    );
+  }
+
+  const callLinkDbRecord: CallLinkRecord = {
+    roomId,
+    rootKey: callLinkRecord.rootKey,
+    adminKey: callLinkRecord.adminPasskey ?? null,
+    name: localCallLinkDbRecord?.name ?? '',
+    restrictions: localCallLinkDbRecord?.restrictions ?? 0,
+    expiration: localCallLinkDbRecord?.expiration ?? null,
+    revoked: localCallLinkDbRecord?.revoked === 1 ? 1 : 0,
+    deleted: deletedAt ? 1 : 0,
+    deletedAt,
+
+    storageID,
+    storageVersion,
+    storageUnknownFields: callLinkRecord.$unknownFields
+      ? Bytes.concatenate(callLinkRecord.$unknownFields)
+      : null,
+    storageNeedsSync: localCallLinkDbRecord?.storageNeedsSync === 1 ? 1 : 0,
+  };
+
+  if (!localCallLinkDbRecord) {
+    if (deletedAt) {
+      details.push(
+        `skipping deleted call link with no matching local record deletedAt=${deletedAt}`
+      );
+    } else if (await DataReader.defunctCallLinkExists(roomId)) {
+      details.push('skipping known defunct call link');
+    } else if (callLinkRefreshJobQueue.hasPendingCallLink(storageID)) {
+      details.push('pending call link refresh, updating storage fields');
+      callLinkRefreshJobQueue.updatePendingCallLinkStorageFields(
+        rootKeyString,
+        {
+          storageID,
+          storageVersion,
+          storageUnknownFields: callLinkDbRecord.storageUnknownFields,
+          storageNeedsSync: false,
+        }
+      );
+    } else {
+      details.push('new call link, enqueueing call link refresh and create');
+
+      // Queue a job to refresh the call link to confirm its existence.
+      // Include the bundle of call link data so we can insert the call link
+      // after confirmation.
+      const callLink = callLinkFromRecord(callLinkDbRecord);
+      drop(
+        callLinkRefreshJobQueue.add({
+          rootKey: callLink.rootKey,
+          adminKey: callLink.adminKey,
+          storageID: callLink.storageID,
+          storageVersion: callLink.storageVersion,
+          storageUnknownFields: callLink.storageUnknownFields,
+          source: `storage.mergeCallLinkRecord(${redactedStorageID})`,
+        })
+      );
+    }
+
+    return {
+      details,
+      hasConflict: false,
+      shouldDrop,
+    };
+  }
+
+  const oldStorageID = localCallLinkDbRecord.storageID || undefined;
+  const oldStorageVersion = localCallLinkDbRecord.storageVersion || undefined;
+
+  const needsToClearUnknownFields =
+    !callLinkRecord.$unknownFields &&
+    localCallLinkDbRecord.storageUnknownFields;
+  if (needsToClearUnknownFields) {
+    details.push('clearing unknown fields');
+  }
+
+  const isBadRemoteData = Boolean(deletedAt && adminKeyString);
+  if (isBadRemoteData) {
+    log.warn(
+      `${logId}: Found bad remote data: deletedAtTimestampMs and adminPasskey were both present. Assuming deleted.`
+    );
+  }
+
+  const { hasConflict, details: conflictDetails } = doRecordsConflict(
+    toCallLinkRecord(callLinkDbRecord),
+    callLinkRecord
+  );
+
+  // First update local record
+  details.push('updated');
+  const callLink = callLinkFromRecord(callLinkDbRecord);
+  await DataWriter.updateCallLink(callLink);
+
+  // Deleted in storage but we have it locally: Delete locally too and update redux
+  if (deletedAt && localCallLinkDbRecord.deleted !== 1) {
+    // Another device deleted the link and uploaded to storage, and we learned about it
+    log.info(`${logId}: Discovered deleted call link, deleting locally`);
+    details.push('deleting locally');
+    // No need to delete via RingRTC as we assume the originating device did that already
+    await DataWriter.deleteCallLinkAndHistory(roomId);
+    window.reduxActions.calling.handleCallLinkDelete({ roomId });
+  } else if (!deletedAt && localCallLinkDbRecord.deleted === 1) {
+    // Not deleted in storage, but we've marked it as deleted locally.
+    // Skip doing anything, we will update things locally after sync.
+    log.warn(`${logId}: Found call link, but it was marked deleted locally.`);
+  } else {
+    window.reduxActions.calling.handleCallLinkUpdate({
+      rootKey: rootKeyString,
+      adminKey: adminKeyString,
+    });
+  }
+
+  return {
+    details: [...details, ...conflictDetails],
+    hasConflict,
+    shouldDrop,
     oldStorageID,
     oldStorageVersion,
   };

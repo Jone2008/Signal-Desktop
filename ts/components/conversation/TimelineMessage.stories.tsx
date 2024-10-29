@@ -317,6 +317,7 @@ const createProps = (overrideProps: Partial<Props> = {}): Props => ({
   renderReactionPicker,
   renderAudioAttachment,
   saveAttachment: action('saveAttachment'),
+  saveAttachments: action('saveAttachments'),
   setQuoteByMessageId: action('setQuoteByMessageId'),
   retryMessageSend: action('retryMessageSend'),
   copyMessageText: action('copyMessageText'),
@@ -340,6 +341,9 @@ const createProps = (overrideProps: Partial<Props> = {}): Props => ({
   showSpoiler: action('showSpoiler'),
   pushPanelForConversation: action('pushPanelForConversation'),
   showContactModal: action('showContactModal'),
+  showAttachmentDownloadStillInProgressToast: action(
+    'showAttachmentDownloadStillInProgressToast'
+  ),
   showExpiredIncomingTapToViewToast: action(
     'showExpiredIncomingTapToViewToast'
   ),
@@ -1122,8 +1126,26 @@ LinkPreviewWithCallLink.args = {
   text: 'Use this link to join a Signal call: https://signal.link/call/#key=hzcn-pcff-ctsc-bdbf-stcr-tzpc-bhqx-kghh',
 };
 
-export const LinkPreviewWithCallLinkInGroup = Template.bind({});
-LinkPreviewWithCallLinkInGroup.args = {
+export const LinkPreviewWithCallLinkInAnotherCall = Template.bind({});
+LinkPreviewWithCallLinkInAnotherCall.args = {
+  previews: [
+    {
+      url: 'https://signal.link/call/#key=hzcn-pcff-ctsc-bdbf-stcr-tzpc-bhqx-kghh',
+      title: 'Camping Prep',
+      description: 'Use this link to join a Signal call',
+      image: undefined,
+      date: undefined,
+      isCallLink: true,
+      isStickerPack: false,
+    },
+  ],
+  status: 'sent',
+  activeCallConversationId: 'some-other-conversation',
+  text: 'Use this link to join a Signal call: https://signal.link/call/#key=hzcn-pcff-ctsc-bdbf-stcr-tzpc-bhqx-kghh',
+};
+
+export const LinkPreviewWithCallLinkInCurrentCall = Template.bind({});
+LinkPreviewWithCallLinkInCurrentCall.args = {
   previews: [
     {
       url: 'https://signal.link/call/#key=hzcn-pcff-ctsc-bdbf-stcr-tzpc-bhqx-kghh',
@@ -1133,11 +1155,13 @@ LinkPreviewWithCallLinkInGroup.args = {
       image: undefined,
       date: undefined,
       isCallLink: true,
+      callLinkRoomId: 'room-id',
       isStickerPack: false,
     },
   ],
   conversationType: 'group',
   status: 'sent',
+  activeCallConversationId: 'room-id',
   text: 'Use this link to join a Signal call: https://signal.link/call/#key=hzcn-pcff-ctsc-bdbf-stcr-tzpc-bhqx-kghh',
 };
 
@@ -1896,7 +1920,6 @@ const fullContact = {
     prefix: 'Dr.',
     suffix: 'Jr.',
     middleName: 'James',
-    displayName: 'Jerry Jordan',
   },
   number: [
     {
@@ -1967,7 +1990,7 @@ export const EmbeddedContactLoadingAvatar = Template.bind({});
 EmbeddedContactLoadingAvatar.args = {
   contact: {
     name: {
-      displayName: 'Jerry Jordan',
+      nickname: 'Jerry',
     },
     avatar: {
       avatar: fakeAttachment({
@@ -1986,6 +2009,13 @@ GiftBadgeUnopened.args = {
     expiration: Date.now() + DAY * 30,
     level: 3,
     state: GiftBadgeStates.Unopened,
+  },
+};
+
+export const GiftBadgeFailed = Template.bind({});
+GiftBadgeFailed.args = {
+  giftBadge: {
+    state: GiftBadgeStates.Failed,
   },
 };
 

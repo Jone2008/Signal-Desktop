@@ -3,8 +3,8 @@
 
 import { isNumber } from 'lodash';
 import PQueue from 'p-queue';
-import { v4 as generateUuid } from 'uuid';
 
+import { DataWriter } from '../../sql/Client';
 import * as Errors from '../../types/errors';
 import { strictAssert } from '../../util/assert';
 import type { MessageModel } from '../../models/messages';
@@ -29,16 +29,11 @@ import type {
 import type {
   AttachmentType,
   UploadedAttachmentType,
-  AttachmentWithHydratedData,
 } from '../../types/Attachment';
 import { copyCdnFields } from '../../util/attachments';
-import { LONG_MESSAGE } from '../../types/MIME';
 import { LONG_ATTACHMENT_LIMIT } from '../../types/Message';
 import type { RawBodyRange } from '../../types/BodyRange';
-import type {
-  EmbeddedContactWithHydratedAvatar,
-  EmbeddedContactWithUploadedAvatar,
-} from '../../types/EmbeddedContact';
+import type { EmbeddedContactWithUploadedAvatar } from '../../types/EmbeddedContact';
 import type { StoryContextType } from '../../types/Util';
 import type { LoggerType } from '../../types/Logging';
 import type {
@@ -54,7 +49,6 @@ import { sendToGroup } from '../../util/sendToGroup';
 import type { DurationInSeconds } from '../../util/durations';
 import type { ServiceIdString } from '../../types/ServiceId';
 import { normalizeAci } from '../../util/normalizeAci';
-import * as Bytes from '../../Bytes';
 import {
   getPropForTimestamp,
   getTargetOfThisEditTimestamp,
@@ -264,6 +258,7 @@ export async function sendNormalMessage(
         contact,
         deletedForEveryoneTimestamp,
         expireTimer,
+        expireTimerVersion: conversation.getExpireTimerVersion(),
         groupV2: conversation.getGroupV2Info({
           members: recipientServiceIdsWithoutMe,
         }),
@@ -380,6 +375,7 @@ export async function sendNormalMessage(
           contentHint: ContentHint.RESENDABLE,
           deletedForEveryoneTimestamp,
           expireTimer,
+          expireTimerVersion: conversation.getExpireTimerVersion(),
           groupId: undefined,
           serviceId: recipientServiceIdsWithoutMe[0],
           messageText: body,
@@ -584,17 +580,14 @@ async function getMessageSendData({
     prop: 'body',
     targetTimestamp,
   });
-  let maybeLongAttachment: AttachmentWithHydratedData | undefined;
-  if (body && body.length > LONG_ATTACHMENT_LIMIT) {
-    const data = Bytes.fromString(body);
+  const maybeLongAttachment = getPropForTimestamp({
+    log,
+    message: message.attributes,
+    prop: 'bodyAttachment',
+    targetTimestamp,
+  });
 
-    maybeLongAttachment = {
-      contentType: LONG_MESSAGE,
-      clientUuid: generateUuid(),
-      fileName: `long-message-${targetTimestamp}.txt`,
-      data,
-      size: data.byteLength,
-    };
+  if (body && body.length > LONG_ATTACHMENT_LIMIT) {
     body = body.slice(0, LONG_ATTACHMENT_LIMIT);
   }
 
@@ -630,7 +623,14 @@ async function getMessageSendData({
       )
     ),
     uploadQueue.add(async () =>
-      maybeLongAttachment ? uploadAttachment(maybeLongAttachment) : undefined
+      maybeLongAttachment
+        ? uploadLongMessageAttachment({
+            attachment: maybeLongAttachment,
+            log,
+            message,
+            targetTimestamp,
+          })
+        : undefined
     ),
     uploadMessageContacts(message, uploadQueue),
     uploadMessagePreviews({
@@ -650,7 +650,7 @@ async function getMessageSendData({
   ]);
 
   // Save message after uploading attachments
-  await window.Signal.Data.saveMessage(message.attributes, {
+  await DataWriter.saveMessage(message.attributes, {
     ourAci: window.textsecure.storage.user.getCheckedAci(),
   });
 
@@ -750,6 +750,52 @@ async function uploadSingleAttachment({
     prop: 'attachments',
     targetTimestamp,
     value: newAttachments,
+  });
+  if (attributesToUpdate) {
+    message.set(attributesToUpdate);
+  }
+
+  return uploaded;
+}
+
+async function uploadLongMessageAttachment({
+  attachment,
+  log,
+  message,
+  targetTimestamp,
+}: {
+  attachment: AttachmentType;
+  log: LoggerType;
+  message: MessageModel;
+  targetTimestamp: number;
+}): Promise<UploadedAttachmentType> {
+  const { loadAttachmentData } = window.Signal.Migrations;
+
+  const withData = await loadAttachmentData(attachment);
+  const uploaded = await uploadAttachment(withData);
+
+  // Add digest to the attachment
+  const logId = `uploadLongMessageAttachment(${message.idForLogging()}`;
+  const oldAttachment = getPropForTimestamp({
+    log,
+    message: message.attributes,
+    prop: 'bodyAttachment',
+    targetTimestamp,
+  });
+  strictAssert(
+    oldAttachment !== undefined,
+    `${logId}: Attachment was uploaded, but message doesn't ` +
+      'have long message attachment anymore'
+  );
+
+  const newBodyAttachment = { ...oldAttachment, ...copyCdnFields(uploaded) };
+
+  const attributesToUpdate = getChangesForPropAtTimestamp({
+    log,
+    message: message.attributes,
+    prop: 'bodyAttachment',
+    targetTimestamp,
+    value: newBodyAttachment,
   });
   if (attributesToUpdate) {
     message.set(attributesToUpdate);
@@ -1057,8 +1103,7 @@ async function uploadMessageContacts(
   strictAssert(oldContact, `${logId}: Contacts are gone after upload`);
 
   const newContact = oldContact.map((contact, index) => {
-    const loaded: EmbeddedContactWithHydratedAvatar | undefined =
-      contacts.at(index);
+    const loaded = contacts.at(index);
     if (!contact.avatar) {
       strictAssert(
         loaded?.avatar === undefined,
@@ -1106,7 +1151,7 @@ async function markMessageFailed({
 }): Promise<void> {
   message.markFailed(targetTimestamp);
   void message.saveErrors(errors, { skipSave: true });
-  await window.Signal.Data.saveMessage(message.attributes, {
+  await DataWriter.saveMessage(message.attributes, {
     ourAci: window.textsecure.storage.user.getCheckedAci(),
   });
 }

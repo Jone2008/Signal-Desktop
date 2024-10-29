@@ -9,7 +9,7 @@ import type { IPCType } from '../../window.d';
 import { parseIntWithFallback } from '../../util/parseIntWithFallback';
 import { getSignalConnections } from '../../util/getSignalConnections';
 import { ThemeType } from '../../types/Util';
-import { getEnvironment, Environment } from '../../environment';
+import { Environment } from '../../environment';
 import { SignalContext } from '../context';
 import * as log from '../../logging/log';
 import { formatCountForLogging } from '../../logging/formatCountForLogging';
@@ -17,6 +17,7 @@ import * as Errors from '../../types/errors';
 
 import { strictAssert } from '../../util/assert';
 import { drop } from '../../util/drop';
+import { DataReader } from '../../sql/Client';
 import type {
   NotificationClickData,
   WindowsNotificationData,
@@ -47,7 +48,6 @@ window.RETRY_DELAY = false;
 
 window.platform = process.platform;
 window.getTitle = () => title;
-window.getEnvironment = getEnvironment;
 window.getAppInstance = () => config.appInstance;
 window.getVersion = () => config.version;
 window.getBuildCreation = () => parseIntWithFallback(config.buildCreation, 0);
@@ -60,8 +60,8 @@ window.getBackupServerPublicParams = () => config.backupServerPublicParams;
 window.getSfuUrl = () => config.sfuUrl;
 
 let title = config.name;
-if (getEnvironment() !== Environment.Production) {
-  title += ` - ${getEnvironment()}`;
+if (config.environment !== Environment.PackagedApp) {
+  title += ` - ${config.environment}`;
 }
 if (config.appInstance) {
   title += ` - ${config.appInstance}`;
@@ -168,7 +168,7 @@ window.logAuthenticatedConnect = () => {
 window.open = () => null;
 
 // Playwright uses `eval` for `.evaluate()` API
-if (config.ciMode !== 'full' && config.environment !== 'test') {
+if (config.ciMode !== 'full' && config.environment !== Environment.Test) {
   // eslint-disable-next-line no-eval, no-multi-assign
   window.eval = global.eval = () => null;
 }
@@ -179,7 +179,6 @@ type NetworkStatistics = {
   unauthorizedRequestsCompared?: string;
   unauthorizedHealthcheckFailures?: string;
   unauthorizedHealthcheckBadStatus?: string;
-  unauthorizedUnexpectedReconnects?: string;
   unauthorizedIpVersionMismatches?: string;
 };
 
@@ -193,7 +192,7 @@ ipc.on('additional-log-data-request', async event => {
 
   let statistics;
   try {
-    statistics = await window.Signal.Data.getStatisticsForLogging();
+    statistics = await DataReader.getStatisticsForLogging();
   } catch (error) {
     statistics = {};
   }
@@ -218,9 +217,6 @@ ipc.on('additional-log-data-request', async event => {
       ),
       unauthorizedHealthcheckBadStatus: formatCountForLogging(
         unauthorizedStats.healthcheckBadStatus
-      ),
-      unauthorizedUnexpectedReconnects: formatCountForLogging(
-        unauthorizedStats.unexpectedReconnects
       ),
       unauthorizedIpVersionMismatches: formatCountForLogging(
         unauthorizedStats.ipVersionMismatches
@@ -364,8 +360,8 @@ ipc.on('show-window', () => {
   window.IPC.showWindow();
 });
 
-ipc.on('set-is-presenting', () => {
-  window.reduxActions?.calling?.setPresenting();
+ipc.on('cancel-presenting', () => {
+  window.reduxActions?.calling?.cancelPresenting();
 });
 
 ipc.on(

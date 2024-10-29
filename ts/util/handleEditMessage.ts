@@ -13,7 +13,7 @@ import type { LinkPreviewType } from '../types/message/LinkPreviews';
 import * as Edits from '../messageModifiers/Edits';
 import * as log from '../logging/log';
 import { ReadStatus } from '../messages/MessageReadStatus';
-import dataInterface from '../sql/Client';
+import { DataWriter } from '../sql/Client';
 import { drop } from './drop';
 import { getAttachmentSignature, isVoiceMessage } from '../types/Attachment';
 import { isAciString } from './isAciString';
@@ -24,6 +24,7 @@ import { isDirectConversation } from './whatTypeOfConversation';
 import { isTooOldToModifyMessage } from './isTooOldToModifyMessage';
 import { queueAttachmentDownloads } from './queueAttachmentDownloads';
 import { modifyTargetMessage } from './modifyTargetMessage';
+import { isMessageNoteToSelf } from './isMessageNoteToSelf';
 
 const RECURSION_LIMIT = 15;
 
@@ -92,12 +93,10 @@ export async function handleEditMessage(
   }
 
   const { serverTimestamp } = editAttributes.message;
-  const isNoteToSelf =
-    mainMessage.conversationId ===
-    window.ConversationController.getOurConversationId();
+
   if (
     serverTimestamp &&
-    !isNoteToSelf &&
+    !isMessageNoteToSelf(mainMessage) &&
     isTooOldToModifyMessage(serverTimestamp, mainMessage)
   ) {
     log.warn(`${idLog}: cannot edit message older than 48h`, serverTimestamp);
@@ -124,6 +123,9 @@ export async function handleEditMessage(
       timestamp: mainMessage.timestamp,
       received_at: mainMessage.received_at,
       received_at_ms: mainMessage.received_at_ms,
+      serverTimestamp: mainMessage.serverTimestamp,
+      readStatus: mainMessage.readStatus,
+      unidentifiedDeliveryReceived: mainMessage.unidentifiedDeliveryReceived,
     },
   ];
 
@@ -251,6 +253,7 @@ export async function handleEditMessage(
   const editedMessage: EditHistoryType = {
     attachments: nextEditedMessageAttachments,
     body: upgradedEditedMessageData.body,
+    bodyAttachment: upgradedEditedMessageData.bodyAttachment,
     bodyRanges: upgradedEditedMessageData.bodyRanges,
     preview: nextEditedMessagePreview,
     sendStateByConversationId:
@@ -258,6 +261,10 @@ export async function handleEditMessage(
     timestamp: upgradedEditedMessageData.timestamp,
     received_at: upgradedEditedMessageData.received_at,
     received_at_ms: upgradedEditedMessageData.received_at_ms,
+    serverTimestamp: upgradedEditedMessageData.serverTimestamp,
+    readStatus: upgradedEditedMessageData.readStatus,
+    unidentifiedDeliveryReceived:
+      upgradedEditedMessageData.unidentifiedDeliveryReceived,
     quote: nextEditedMessageQuote,
   };
 
@@ -270,6 +277,7 @@ export async function handleEditMessage(
   mainMessageModel.set({
     attachments: editedMessage.attachments,
     body: editedMessage.body,
+    bodyAttachment: editedMessage.bodyAttachment,
     bodyRanges: editedMessage.bodyRanges,
     editHistory,
     editMessageTimestamp: upgradedEditedMessageData.timestamp,
@@ -344,7 +352,7 @@ export async function handleEditMessage(
 
   // Save both the main message and the edited message for fast lookups
   drop(
-    dataInterface.saveEditedMessage(
+    DataWriter.saveEditedMessage(
       mainMessageModel.attributes,
       window.textsecure.storage.user.getCheckedAci(),
       {
@@ -370,6 +378,10 @@ export async function handleEditMessage(
       isFirstRun: false,
       skipEdits: true,
     });
+
+    window.reduxActions.conversations.markOpenConversationRead(
+      mainMessageConversation.id
+    );
   }
 
   // Apply any other pending edits that target this message

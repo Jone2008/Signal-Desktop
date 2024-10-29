@@ -6,7 +6,7 @@ import type { ReadonlyDeep } from 'type-fest';
 import type { ExplodePromiseResultType } from '../../util/explodePromise';
 import type {
   GroupV2PendingMemberType,
-  MessageAttributesType,
+  ReadonlyMessageAttributesType,
 } from '../../model-types.d';
 import type {
   MessageChangedActionType,
@@ -48,11 +48,12 @@ import { ForwardMessagesModalType } from '../../components/ForwardMessagesModal'
 import type { CallLinkType } from '../../types/CallLink';
 import type { LocalizerType } from '../../types/I18N';
 import { linkCallRoute } from '../../util/signalRoutes';
+import type { StartCallData } from '../../components/ConfirmLeaveCallModal';
 
 // State
 
 export type EditHistoryMessagesType = ReadonlyDeep<
-  Array<MessageAttributesType>
+  Array<ReadonlyMessageAttributesType>
 >;
 export type EditNicknameAndNoteModalPropsType = ReadonlyDeep<{
   conversationId: string;
@@ -93,6 +94,8 @@ export type GlobalModalsStateType = ReadonlyDeep<{
   aboutContactModalContactId?: string;
   callLinkAddNameModalRoomId: string | null;
   callLinkEditModalRoomId: string | null;
+  callLinkPendingParticipantContactId: string | undefined;
+  confirmLeaveCallModalState: StartCallData | null;
   contactModalState?: ContactModalStateType;
   deleteMessagesProps?: DeleteMessagesPropsType;
   editHistoryMessages?: EditHistoryMessagesType;
@@ -100,7 +103,7 @@ export type GlobalModalsStateType = ReadonlyDeep<{
   errorModalProps?: {
     buttonVariant?: ButtonVariant;
     description?: string;
-    title?: string;
+    title?: string | null;
   };
   forwardMessagesProps?: ForwardMessagesPropsType;
   gv2MigrationProps?: MigrateToGV2PropsType;
@@ -147,6 +150,8 @@ const TOGGLE_ADD_USER_TO_ANOTHER_GROUP_MODAL =
 const TOGGLE_CALL_LINK_ADD_NAME_MODAL =
   'globalModals/TOGGLE_CALL_LINK_ADD_NAME_MODAL';
 const TOGGLE_CALL_LINK_EDIT_MODAL = 'globalModals/TOGGLE_CALL_LINK_EDIT_MODAL';
+const TOGGLE_CALL_LINK_PENDING_PARTICIPANT_MODAL =
+  'globalModals/TOGGLE_CALL_LINK_PENDING_PARTICIPANT_MODAL';
 const TOGGLE_ABOUT_MODAL = 'globalModals/TOGGLE_ABOUT_MODAL';
 const TOGGLE_SIGNAL_CONNECTIONS_MODAL =
   'globalModals/TOGGLE_SIGNAL_CONNECTIONS_MODAL';
@@ -168,6 +173,8 @@ const TOGGLE_CONFIRMATION_MODAL = 'globalModals/TOGGLE_CONFIRMATION_MODAL';
 const SHOW_EDIT_HISTORY_MODAL = 'globalModals/SHOW_EDIT_HISTORY_MODAL';
 const CLOSE_EDIT_HISTORY_MODAL = 'globalModals/CLOSE_EDIT_HISTORY_MODAL';
 const TOGGLE_USERNAME_ONBOARDING = 'globalModals/TOGGLE_USERNAME_ONBOARDING';
+const TOGGLE_CONFIRM_LEAVE_CALL_MODAL =
+  'globalModals/TOGGLE_CONFIRM_LEAVE_CALL_MODAL';
 
 export type ContactModalStateType = ReadonlyDeep<{
   contactId: string;
@@ -221,6 +228,11 @@ type ToggleForwardMessagesModalActionType = ReadonlyDeep<{
   payload: ForwardMessagesPropsType | undefined;
 }>;
 
+export type ToggleConfirmLeaveCallModalActionType = ReadonlyDeep<{
+  type: typeof TOGGLE_CONFIRM_LEAVE_CALL_MODAL;
+  payload: StartCallData | null;
+}>;
+
 type ToggleNotePreviewModalActionType = ReadonlyDeep<{
   type: typeof TOGGLE_NOTE_PREVIEW_MODAL;
   payload: NotePreviewModalPropsType | null;
@@ -255,6 +267,11 @@ type ToggleCallLinkAddNameModalActionType = ReadonlyDeep<{
 type ToggleCallLinkEditModalActionType = ReadonlyDeep<{
   type: typeof TOGGLE_CALL_LINK_EDIT_MODAL;
   payload: string | null;
+}>;
+
+type ToggleCallLinkPendingParticipantModalActionType = ReadonlyDeep<{
+  type: typeof TOGGLE_CALL_LINK_PENDING_PARTICIPANT_MODAL;
+  payload: string | undefined;
 }>;
 
 type ToggleAboutContactModalActionType = ReadonlyDeep<{
@@ -321,7 +338,7 @@ export type ShowErrorModalActionType = ReadonlyDeep<{
   payload: {
     buttonVariant?: ButtonVariant;
     description?: string;
-    title?: string;
+    title?: string | null;
   };
 }>;
 
@@ -384,7 +401,9 @@ export type GlobalModalsActionType = ReadonlyDeep<
   | ToggleAddUserToAnotherGroupModalActionType
   | ToggleCallLinkAddNameModalActionType
   | ToggleCallLinkEditModalActionType
+  | ToggleCallLinkPendingParticipantModalActionType
   | ToggleConfirmationModalActionType
+  | ToggleConfirmLeaveCallModalActionType
   | ToggleDeleteMessagesModalActionType
   | ToggleForwardMessagesModalActionType
   | ToggleNotePreviewModalActionType
@@ -425,7 +444,9 @@ export const actions = {
   toggleAddUserToAnotherGroupModal,
   toggleCallLinkAddNameModal,
   toggleCallLinkEditModal,
+  toggleCallLinkPendingParticipantModal,
   toggleConfirmationModal,
+  toggleConfirmLeaveCallModal,
   toggleDeleteMessagesModal,
   toggleForwardMessagesModal,
   toggleNotePreviewModal,
@@ -682,6 +703,15 @@ function showShareCallLinkViaSignal(
   };
 }
 
+export function toggleConfirmLeaveCallModal(
+  payload: StartCallData | null
+): ToggleConfirmLeaveCallModalActionType {
+  return {
+    type: TOGGLE_CONFIRM_LEAVE_CALL_MODAL,
+    payload,
+  };
+}
+
 function toggleNotePreviewModal(
   payload: NotePreviewModalPropsType | null
 ): ToggleNotePreviewModalActionType {
@@ -734,6 +764,15 @@ function toggleCallLinkEditModal(
   return {
     type: TOGGLE_CALL_LINK_EDIT_MODAL,
     payload: roomId,
+  };
+}
+
+function toggleCallLinkPendingParticipantModal(
+  contactId?: string
+): ToggleCallLinkPendingParticipantModalActionType {
+  return {
+    type: TOGGLE_CALL_LINK_PENDING_PARTICIPANT_MODAL,
+    payload: contactId,
   };
 }
 
@@ -882,7 +921,7 @@ function showShortcutGuideModal(): ShowShortcutGuideModalActionType {
 }
 
 function copyOverMessageAttributesIntoEditHistory(
-  messageAttributes: ReadonlyDeep<MessageAttributesType>
+  messageAttributes: ReadonlyDeep<ReadonlyMessageAttributesType>
 ): EditHistoryMessagesType | undefined {
   if (!messageAttributes.editHistory) {
     return;
@@ -934,7 +973,7 @@ function closeEditHistoryModal(): CloseEditHistoryModalActionType {
 
 function copyOverMessageAttributesIntoForwardMessages(
   messageDrafts: ReadonlyArray<MessageForwardDraft>,
-  attributes: ReadonlyDeep<MessageAttributesType>
+  attributes: ReadonlyDeep<ReadonlyMessageAttributesType>
 ): ReadonlyArray<MessageForwardDraft> {
   return messageDrafts.map(messageDraft => {
     if (messageDraft.originalMessageId !== attributes.id) {
@@ -954,6 +993,8 @@ export function getEmptyState(): GlobalModalsStateType {
     hasConfirmationModal: false,
     callLinkAddNameModalRoomId: null,
     callLinkEditModalRoomId: null,
+    callLinkPendingParticipantContactId: undefined,
+    confirmLeaveCallModalState: null,
     editNicknameAndNoteModalProps: null,
     isProfileEditorVisible: false,
     isShortcutGuideModalVisible: false,
@@ -976,6 +1017,13 @@ export function reducer(
     return {
       ...state,
       aboutContactModalContactId: action.payload,
+    };
+  }
+
+  if (action.type === TOGGLE_CONFIRM_LEAVE_CALL_MODAL) {
+    return {
+      ...state,
+      confirmLeaveCallModalState: action.payload,
     };
   }
 
@@ -1078,6 +1126,13 @@ export function reducer(
     return {
       ...state,
       callLinkEditModalRoomId: action.payload,
+    };
+  }
+
+  if (action.type === TOGGLE_CALL_LINK_PENDING_PARTICIPANT_MODAL) {
+    return {
+      ...state,
+      callLinkPendingParticipantContactId: action.payload,
     };
   }
 

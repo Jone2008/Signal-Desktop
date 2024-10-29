@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import * as Backbone from 'backbone';
+import type { ReadonlyDeep } from 'type-fest';
 
 import type { GroupV2ChangeType } from './groups';
 import type { DraftBodyRanges, RawBodyRange } from './types/BodyRange';
@@ -118,7 +119,6 @@ export type MessageReactionType = {
   fromId: string;
   targetTimestamp: number;
   timestamp: number;
-  receivedAtDate: undefined | number;
   isSentByConversationId?: Record<string, boolean>;
 };
 
@@ -136,6 +136,9 @@ export type EditHistoryType = {
   timestamp: number;
   received_at: number;
   received_at_ms?: number;
+  serverTimestamp?: number;
+  readStatus?: ReadStatus;
+  unidentifiedDeliveryReceived?: boolean;
 };
 
 type MessageType =
@@ -225,13 +228,20 @@ export type MessageAttributesType = {
     targetAuthorAci: AciString;
     targetTimestamp: number;
   };
-  giftBadge?: {
-    expiration: number;
-    level: number;
-    id: string | undefined;
-    receiptCredentialPresentation: string;
-    state: GiftBadgeStates;
-  };
+  giftBadge?:
+    | {
+        state:
+          | GiftBadgeStates.Unopened
+          | GiftBadgeStates.Opened
+          | GiftBadgeStates.Redeemed;
+        expiration: number;
+        level: number;
+        id: string | undefined;
+        receiptCredentialPresentation: string;
+      }
+    | {
+        state: GiftBadgeStates.Failed;
+      };
 
   expirationTimerUpdate?: {
     expireTimer?: DurationInSeconds;
@@ -291,6 +301,8 @@ export type MessageAttributesType = {
   deletedForEveryoneFailed?: boolean;
 };
 
+export type ReadonlyMessageAttributesType = ReadonlyDeep<MessageAttributesType>;
+
 export type ConversationAttributesTypeType = 'private' | 'group';
 
 export type ConversationLastProfileType = Readonly<{
@@ -333,6 +345,8 @@ export type ConversationAttributesType = {
   // Set at backup import time, exported as is.
   wallpaperPhotoPointerBase64?: string;
   wallpaperPreset?: number;
+  dimWallpaperInDarkMode?: boolean;
+  autoBubbleColor?: boolean;
 
   discoveredUnregisteredAt?: number;
   firstUnregisteredAt?: number;
@@ -370,6 +384,10 @@ export type ConversationAttributesType = {
   lastProfile?: ConversationLastProfileType;
   needsTitleTransition?: boolean;
   quotedMessageId?: string | null;
+  /**
+   * TODO: Rename this key to be specific to the accessKey on the conversation
+   * It's not used for group endorsements.
+   */
   sealedSender?: unknown;
   sentMessageCount?: number;
   sharedGroupNames?: ReadonlyArray<string>;
@@ -456,6 +474,7 @@ export type ConversationAttributesType = {
   avatars?: ReadonlyArray<Readonly<AvatarDataType>>;
   description?: string;
   expireTimer?: DurationInSeconds;
+  expireTimerVersion: number;
   membersV2?: Array<GroupV2MemberType>;
   pendingMembersV2?: Array<GroupV2PendingMemberType>;
   pendingAdminApprovalV2?: Array<GroupV2PendingAdminApprovalType>;

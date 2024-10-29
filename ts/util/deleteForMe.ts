@@ -15,7 +15,7 @@ import { getMessageSentTimestampSet } from './getMessageSentTimestampSet';
 import { getAuthor } from '../messages/helpers';
 import { isPniString } from '../types/ServiceId';
 import { singleProtoJobQueue } from '../jobs/singleProtoJobQueue';
-import dataInterface, { deleteAndCleanup } from '../sql/Client';
+import { DataReader, DataWriter, deleteAndCleanup } from '../sql/Client';
 import { deleteData } from '../types/Attachment';
 
 import type {
@@ -31,12 +31,9 @@ import type { AciString, PniString } from '../types/ServiceId';
 import type { AttachmentType } from '../types/Attachment';
 import type { MessageModel } from '../models/messages';
 
-const {
-  getMessagesBySentAt,
-  getMostRecentAddressableMessages,
-  removeMessagesInConversation,
-  saveMessage,
-} = dataInterface;
+const { getMessagesBySentAt, getMostRecentAddressableMessages } = DataReader;
+
+const { removeMessagesInConversation, saveMessage } = DataWriter;
 
 export function doesMessageMatch({
   conversationId,
@@ -126,9 +123,11 @@ export async function deleteAttachmentFromMessage(
   },
   {
     deleteOnDisk,
+    deleteDownloadOnDisk,
     logId,
   }: {
     deleteOnDisk: (path: string) => Promise<void>;
+    deleteDownloadOnDisk: (path: string) => Promise<void>;
     logId: string;
   }
 ): Promise<boolean> {
@@ -150,6 +149,7 @@ export async function deleteAttachmentFromMessage(
 
   return applyDeleteAttachmentFromMessage(message, deleteAttachmentData, {
     deleteOnDisk,
+    deleteDownloadOnDisk,
     logId,
     shouldSave: true,
   });
@@ -168,10 +168,12 @@ export async function applyDeleteAttachmentFromMessage(
   },
   {
     deleteOnDisk,
+    deleteDownloadOnDisk,
     shouldSave,
     logId,
   }: {
     deleteOnDisk: (path: string) => Promise<void>;
+    deleteDownloadOnDisk: (path: string) => Promise<void>;
     shouldSave: boolean;
     logId: string;
   }
@@ -209,7 +211,7 @@ export async function applyDeleteAttachmentFromMessage(
         if (shouldSave) {
           await saveMessage(message.attributes, { ourAci });
         }
-        await deleteData(deleteOnDisk)(attachment);
+        await deleteData({ deleteOnDisk, deleteDownloadOnDisk })(attachment);
 
         return true;
       }

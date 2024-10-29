@@ -80,11 +80,11 @@
   "icu:databaseError__startOldVersion": {
     "messageformat": "Версията на вашата база данни не съответства на тази версия на Signal. Уверете се, че отваряте най-новата версия на Signal на компютъра си."
   },
-  "icu:databaseError__recover__detail": {
-    "messageformat": "A database error occurred. You can copy the error and contact Signal support to help fix the issue. If you need to use Signal right away, you can attempt to recover your data.\n\nContact support by visiting: {link}"
+  "icu:databaseError__safeStorageBackendChange": {
+    "messageformat": "Не можа да бъде осъществен достъп до ключа за криптиране на базата данни, тъй като бекендът на ключодържателя за криптиране на ОС е променен от {previousBackend} на {currentBackend}. Това може да се случи, ако средата на работния плот бъде променена, например между GNOME и KDE.\n\nМоля, превключете към предишната работна среда."
   },
-  "icu:databaseError__recover__button": {
-    "messageformat": "Recover data"
+  "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
+    "messageformat": "Не можа да бъде осъществен достъп до ключа за криптиране на базата данни, тъй като бекендът на ключодържателя за криптиране на ОС е променен от {previousBackend} на {currentBackend}. Това може да се случи, ако средата на работния плот бъде променена, например между GNOME и KDE.\n\nМоля, превключете към предишната работна среда или опитайте да пуснете signal с флага на командния ред --password-store=\"{previousBackendFlag}\""
   },
   "icu:mainMenuFile": {
     "messageformat": "&Файл"
@@ -575,8 +575,11 @@
   "icu:decryptionErrorToast": {
     "messageformat": "Десктопът срещна грешка при декриптиране от {name}, устройство {deviceId}"
   },
-  "icu:decryptionErrorToastAction": {
+  "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "Изпращане на регистър"
+  },
+  "icu:Toast--FailedToSendWithEndorsements": {
+    "messageformat": "Failed to send message with endorsements"
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Не можете да избирате снимки и видеоклипове заедно с файлове."
@@ -785,8 +788,14 @@
   "icu:attachmentSaved": {
     "messageformat": "Прикаченият файл е запазен."
   },
+  "icu:attachmentSavedPlural": {
+    "messageformat": "{count, plural, one {Attachment saved} other {{count,number} attachments saved}}"
+  },
   "icu:attachmentSavedShow": {
     "messageformat": "Показване в папка"
+  },
+  "icu:attachmentStillDownloading": {
+    "messageformat": "{count, plural, one {Can't save attachment, since it hasn't finished downloading yet} other {Can't save attachments, since {count,number} haven't finished downloading yet}}"
   },
   "icu:you": {
     "messageformat": "Ти"
@@ -821,11 +830,11 @@
   "icu:mute": {
     "messageformat": "Заглушаване"
   },
-  "icu:cannotUpdateDetail": {
-    "messageformat": "Signal не можа да се актуализира. {retry} или посетете {url}, за да го инсталирате ръчно. След това {support} за този проблем"
+  "icu:cannotUpdateDetail-v2": {
+    "messageformat": "Signal не можа да се актуализира. <retryUpdateButton>Опитайте актуализацията отново</retryUpdateButton> или посетете {url}, за да я инсталирате ръчно. След това се <contactSupportLink>свържете с поддръжката</contactSupportLink> във връзка с този проблем"
   },
-  "icu:cannotUpdateRequireManualDetail": {
-    "messageformat": "Signal не можа да се актуализира. Посетете {url}, за да го инсталирате ръчно. След това {support} за този проблем"
+  "icu:cannotUpdateRequireManualDetail-v2": {
+    "messageformat": "Signal не можа да се актуализира. Посетете {url} за ръчна инсталация. След това се <contactSupportLink>свържете с поддръжката</contactSupportLink> във връзка с този проблем"
   },
   "icu:readOnlyVolume": {
     "messageformat": "Вероятно Signal Desktop е в macOS устройство с права за четене и няма да може да се самообновява. Опитайте се да преместите {app} към {folder} с помощта на Finder."
@@ -938,8 +947,8 @@
   "icu:NotePreviewModal__Title": {
     "messageformat": "Бележка"
   },
-  "icu:viewRecentMedia": {
-    "messageformat": "Разгледай последната мултимедия"
+  "icu:allMediaMenuItem": {
+    "messageformat": "Всички мултимедия файлове"
   },
   "icu:back": {
     "messageformat": "Обратно"
@@ -997,6 +1006,18 @@
   },
   "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description-with-sync": {
     "messageformat": "Всички съобщения в този чат ще бъдат изтрити от всички ваши устройства. Пак ще можете да търсите този чат, след като изтриете съобщенията."
+  },
+  "icu:deleteConversation": {
+    "messageformat": "Изтриване"
+  },
+  "icu:ConversationHeader__DeleteConversationConfirmation__title": {
+    "messageformat": "Изтриване на чата?"
+  },
+  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
+    "messageformat": "Всички съобщения в този чат ще бъдат изтрити от това устройство."
+  },
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
+    "messageformat": "Всички съобщения в този чат ще бъдат изтрити от всички ваши устройства."
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "Напускане на групата"
@@ -1101,7 +1122,7 @@
     "messageformat": "Свързани устройства"
   },
   "icu:linkNewDevice": {
-    "messageformat": "Свържи ново устройство"
+    "messageformat": "Свързване на ново устройство"
   },
   "icu:Install__learn-more": {
     "messageformat": "Научете повече"
@@ -1119,10 +1140,7 @@
     "messageformat": "Настройки"
   },
   "icu:Install__instructions__3": {
-    "messageformat": "Докоснете {plusButton} (Android) или {linkNewDevice} (iPhone)"
-  },
-  "icu:Install__qr-failed-load": {
-    "messageformat": "QR кодът не успя да се зареди. Проверете интернет връзката си и опитайте отново. <retry>Опитай отново</retry>"
+    "messageformat": "Докоснете {linkNewDevice}"
   },
   "icu:Install__qr-failed-load__error--timeout": {
     "messageformat": "QR кодът не успя да се зареди. Проверете връзката си и опитайте отново."
@@ -1197,10 +1215,10 @@
     "messageformat": "Повторно повикване"
   },
   "icu:calling__join": {
-    "messageformat": "Присъеди се към разговор"
+    "messageformat": "Присъединете се към разговор"
   },
   "icu:calling__return": {
-    "messageformat": "Връщане към повикването"
+    "messageformat": "Връщане към разговора"
   },
   "icu:calling__lobby-automatically-muted-because-there-are-a-lot-of-people": {
     "messageformat": "Микрофонът е заглушен поради размера на обаждането"
@@ -1214,9 +1232,6 @@
   "icu:calling__cant-join": {
     "messageformat": "Неуспешно присъединяване към повикването"
   },
-  "icu:calling__dialog-already-in-call": {
-    "messageformat": "Вече сте в повикване."
-  },
   "icu:calling__call-link-connection-issues": {
     "messageformat": "Неуспешно извличане на информация за линка за разговор. Моля, проверете мрежовата си връзка и опитайте отново."
   },
@@ -1228,6 +1243,9 @@
   },
   "icu:calling__call-link-default-title": {
     "messageformat": "Signal обаждане"
+  },
+  "icu:calling__call-link-delete-failed": {
+    "messageformat": "Линкът не можа да бъде изтрит. Проверете връзката си и опитайте отново."
   },
   "icu:calling__join-request-denied": {
     "messageformat": "Заявката ви за присъединяване към повикването е отхвърлена."
@@ -1400,20 +1418,20 @@
   "icu:calling__in-this-call": {
     "messageformat": "{people, plural, one {В този разговор · {people,number} човек} other {В този разговор · {people,number} хора}}"
   },
-  "icu:calling__you-have-blocked": {
-    "messageformat": "Блокирахте {name}"
-  },
   "icu:calling__blocked-participant": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "Потребителят {name} е блокиран"
   },
   "icu:calling__block-info-title": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "Потребителят {name} е блокиран"
   },
   "icu:calling__block-info": {
-    "messageformat": "You won’t receive their audio or video and they won’t receive yours."
+    "messageformat": "Няма да получавате аудио или видео от тях и те няма да получават от вас."
   },
   "icu:calling__missing-media-keys": {
     "messageformat": "Не може да приемате аудио и видео от {name}"
+  },
+  "icu:calling__missing-media-keys--unknown-contact": {
+    "messageformat": "Не можете да приемете аудио и видео"
   },
   "icu:calling__missing-media-keys-info": {
     "messageformat": "Може потребителят да не е потвърдил промяната на номера ви за безопасност, да има проблем с устройството си или да ви е блокирал."
@@ -1438,6 +1456,9 @@
   },
   "icu:calling__presenting--info": {
     "messageformat": "Signal споделя {window}."
+  },
+  "icu:calling__presenting--info--unknown": {
+    "messageformat": "Споделянето на екрана в Signal е активно"
   },
   "icu:calling__presenting--reconnecting": {
     "messageformat": "Повторно свързване…"
@@ -1621,6 +1642,9 @@
   },
   "icu:timestampFormat__long--yesterday": {
     "messageformat": "Вчера {time}"
+  },
+  "icu:messageLoop": {
+    "messageformat": "Възможно е Signal да не успява да обработи входящо съобщение."
   },
   "icu:messageBodyTooLong": {
     "messageformat": "Съобщението е твърде дълго."
@@ -1834,9 +1858,6 @@
   },
   "icu:autoUpdateRetry": {
     "messageformat": "Повторен опит за актуализация"
-  },
-  "icu:autoUpdateContactSupport": {
-    "messageformat": "свържете се с поддръжката"
   },
   "icu:autoUpdateNewVersionMessage": {
     "messageformat": "Кликнете, за да рестартирате Signal"
@@ -2625,10 +2646,10 @@
     "messageformat": "Откажи"
   },
   "icu:declinedIncomingAudioCall": {
-    "messageformat": "Отказахте гласово повикване"
+    "messageformat": "Отказано гласово обаждане"
   },
   "icu:declinedIncomingVideoCall": {
-    "messageformat": "Отказахте видео повикване"
+    "messageformat": "Отказано видео обаждане"
   },
   "icu:acceptedIncomingAudioCall": {
     "messageformat": "Входящо гласово повикване"
@@ -2661,10 +2682,10 @@
     "messageformat": "Signal ще продължи да работи в областта за известия. Можете да промените това от настройките на Signal."
   },
   "icu:incomingAudioCall": {
-    "messageformat": "Входящо гласово повикване…"
+    "messageformat": "Входящо гласово повикване"
   },
   "icu:incomingVideoCall": {
-    "messageformat": "Входящо видео повикване…"
+    "messageformat": "Входящо видео повикване"
   },
   "icu:outgoingAudioCall": {
     "messageformat": "Изходящо гласово повикване"
@@ -2709,10 +2730,13 @@
     "messageformat": "{count, plural, one {{count,number} човек} other {{count,number} души}}"
   },
   "icu:CallControls__InfoDisplay--audio-call": {
-    "messageformat": "Аудио повикване"
+    "messageformat": "Гласово обаждане"
   },
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "Линк за повикване"
+  },
+  "icu:CallControls__InfoDisplay--group-call": {
+    "messageformat": "Групов разговор"
   },
   "icu:CallControls__InfoDisplay--adhoc-join-request-pending": {
     "messageformat": "В очакване да ви допуснат"
@@ -2772,16 +2796,16 @@
     "messageformat": "{people, plural, one {{people,number} в разговора} other {{people,number} в разговора}}"
   },
   "icu:calling__call-notification__ended": {
-    "messageformat": "Груповият разговор приключи"
+    "messageformat": "Видео обаждането приключи"
   },
   "icu:calling__call-notification__started-by-someone": {
-    "messageformat": "Започна групов разговор"
+    "messageformat": "Започна видео обаждане"
   },
   "icu:calling__call-notification__started-by-you": {
-    "messageformat": "Започнахте групово повикване"
+    "messageformat": "Започнахте видео обаждане"
   },
   "icu:calling__call-notification__started": {
-    "messageformat": "{name} започна групово повикване"
+    "messageformat": "{name} започна видео обаждане"
   },
   "icu:calling__in-another-call-tooltip": {
     "messageformat": "Вече сте в това повикване"
@@ -2970,7 +2994,7 @@
     "messageformat": "Не можете да се присъедините към тази група чрез линка за групата, тъй като сте премахнати от администратор."
   },
   "icu:GroupV2--join--prompt-with-approval": {
-    "messageformat": "Администратор на тази група трябва да одобри заявката ви, преди да можете да се присъедините към групата. Ако бъдете одобрени, името и снимката ви ще бъдат споделени с членовете ѝ."
+    "messageformat": "Администратор на тази група трябва да одобри заявката ви, преди да можете да се присъедините към нея. Когато поискате да се присъедините, вашето име и снимка ще бъдат споделени с нейните членове."
   },
   "icu:GroupV2--join--join-button": {
     "messageformat": "Присъедини се"
@@ -3347,11 +3371,8 @@
   "icu:GroupV2--admin-approval-remove-one--other--unknown": {
     "messageformat": "A request to join the group from {joinerName} was denied."
   },
-  "icu:GroupV2--admin-approval-bounce--one": {
-    "messageformat": "{joinerName} заяви и отмени заявката си за присъединяване чрез линка на групата"
-  },
-  "icu:GroupV2--admin-approval-bounce": {
-    "messageformat": "{joinerName} заяви и отмени {numberOfRequests,number} заявки за присъединяване чрез линка на групата"
+  "icu:GroupV2--admin-approval-bounce--pluralized": {
+    "messageformat": "{numberOfRequests, plural, one {{joinerName} поиска и отмени своята заявка за присъединяване чрез линка на групата} other {{joinerName} поиска и отмени {numberOfRequests,number} заявки за присъединяване чрез линка на групата}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "Включили сте линка на групата с деактивирано одобрение от администратор."
@@ -3527,6 +3548,93 @@
   "icu:BadgeSustainerInstructions__instructions__3": {
     "messageformat": "Докоснете върху „Дарение за Signal“ и се абонирайте"
   },
+  "icu:BackupImportScreen__title": {
+    "messageformat": "Синхронизиране на съобщения"
+  },
+  "icu:BackupImportScreen__progressbar-hint": {
+    "messageformat": "Изтегляне на {currentSize} от {totalSize} ({fractionComplete,number,percent})…"
+  },
+  "icu:BackupImportScreen__progressbar-hint--processing": {
+    "messageformat": "Финализиране на прехвърлянето на съобщения..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--preparing": {
+    "messageformat": "Подготвяне за изтегляне…"
+  },
+  "icu:BackupImportScreen__description": {
+    "messageformat": "Това може да отнеме няколко минути в зависимост от размера на резервното копие"
+  },
+  "icu:BackupImportScreen__cancel": {
+    "messageformat": "Отмяна на трансфера"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__title": {
+    "messageformat": "Отмяна на трансфера?"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__body": {
+    "messageformat": "Възстановяването на съобщенията и мултимедията ви не е приключило. Ако решите да отмените, можете да извършите прехвърлянето отново от „Настройки“."
+  },
+  "icu:BackupImportScreen__cancel-confirmation__cancel": {
+    "messageformat": "Продължаване на трансфера"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__confirm": {
+    "messageformat": "Отмяна на трансфера"
+  },
+  "icu:BackupImportScreen__error__title": {
+    "messageformat": "Грешка при прехвърлянето на съобщенията ви"
+  },
+  "icu:BackupImportScreen__error__body": {
+    "messageformat": "Съобщенията ви не можаха да бъдат прехвърлени. Проверете интернет връзката си и опитайте отново."
+  },
+  "icu:BackupImportScreen__error__confirm": {
+    "messageformat": "Опитайте отново"
+  },
+  "icu:BackupImportScreen__skip": {
+    "messageformat": "Пропуснете"
+  },
+  "icu:BackupImportScreen__skip-confirmation__title": {
+    "messageformat": "Пропускане на прехвърлянето на съобщенията?"
+  },
+  "icu:BackupImportScreen__skip-confirmation__body": {
+    "messageformat": "Ако изберете да пропуснете, няма да имате достъп до съобщенията или мултимедията си на това устройство. След пропускането можете да започнете ново прехвърляне от „Настройки > Чатове > Прехвърляне“."
+  },
+  "icu:BackupImportScreen__skip-confirmation__cancel": {
+    "messageformat": "Отказ"
+  },
+  "icu:BackupMediaDownloadProgress__title-in-progress": {
+    "messageformat": "Възстановяване на мултимедия"
+  },
+  "icu:BackupMediaDownloadProgress__title-paused": {
+    "messageformat": "Възстановяването е на пауза"
+  },
+  "icu:BackupMediaDownloadProgress__button-pause": {
+    "messageformat": "Пауза на трансфера"
+  },
+  "icu:BackupMediaDownloadProgress__button-resume": {
+    "messageformat": "Подновяване на трансфера"
+  },
+  "icu:BackupMediaDownloadProgress__button-cancel": {
+    "messageformat": "Отмяна на трансфера"
+  },
+  "icu:BackupMediaDownloadProgress__button-more": {
+    "messageformat": "Още опции"
+  },
+  "icu:BackupMediaDownloadProgress__title-complete": {
+    "messageformat": "Възстановяването е завършено"
+  },
+  "icu:BackupMediaDownloadProgress__progressbar-hint": {
+    "messageformat": "{currentSize} от {totalSize}"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__title": {
+    "messageformat": "Отмяна на трансфера на мултимедия?"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__description": {
+    "messageformat": "Възстановяването на съобщенията и мултимедията ви не е приключило. Ако решите да отмените, можете да извършите прехвърлянето отново от „Настройки“."
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
+    "messageformat": "Продължаване на трансфера"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
+    "messageformat": "Отмяна на трансфера"
+  },
   "icu:CompositionArea--expand": {
     "messageformat": "Разшири"
   },
@@ -3575,8 +3683,8 @@
   "icu:ContactModal--remove-from-group": {
     "messageformat": "Премахване от групата"
   },
-  "icu:ContactModal--already-in-call": {
-    "messageformat": "Вече сте в обаждане"
+  "icu:ContactModal--voice": {
+    "messageformat": "Обаждане"
   },
   "icu:showChatColorEditor": {
     "messageformat": "Цвят на чата"
@@ -3759,7 +3867,7 @@
     "messageformat": "Промяна на връзката"
   },
   "icu:GroupLinkManagement--approve-label": {
-    "messageformat": "Одобряване на новите членове"
+    "messageformat": "Изискване на одобрение от администратор"
   },
   "icu:GroupLinkManagement--approve-info": {
     "messageformat": "Изискване администратор да одобрява нови членове, които се присъединяват чрез линка на групата"
@@ -3947,11 +4055,11 @@
   "icu:MessageAudio--playbackRatep5": {
     "messageformat": "0,5"
   },
-  "icu:emptyInboxMessage": {
-    "messageformat": "Кликнете {composeIcon} по-горе и потърсете свой контакт или група, за да изпратите съобщение."
+  "icu:emptyInbox__title": {
+    "messageformat": "Няма чатове"
   },
-  "icu:composeIcon": {
-    "messageformat": "бутон за съставяне"
+  "icu:emptyInbox__subtitle": {
+    "messageformat": "Последните чатове ще се появят тук."
   },
   "icu:ForwardMessageModal__title": {
     "messageformat": "Препращане до"
@@ -4378,6 +4486,12 @@
   },
   "icu:ProfileEditorModal--error": {
     "messageformat": "Грешка при обновяване на профила ви. Моля, опитайте пак."
+  },
+  "icu:ProfileEditor__invalid-about__title": {
+    "messageformat": "Невалидни знаци"
+  },
+  "icu:ProfileEditor__invalid-about__body": {
+    "messageformat": "Един или повече от въведените знаци не могат да бъдат използвани. Опитайте отново."
   },
   "icu:AnnouncementsOnlyGroupBanner--modal": {
     "messageformat": "Пиши на администратор"
@@ -4841,6 +4955,12 @@
   "icu:Stories__list-empty": {
     "messageformat": "В момента няма скорошни истории за показване"
   },
+  "icu:Stories__list__empty--title": {
+    "messageformat": "Няма истории"
+  },
+  "icu:Stories__list__empty--subtitle": {
+    "messageformat": "Новите актуализации ще се появяват тук."
+  },
   "icu:Stories__list--sending": {
     "messageformat": "Изпращане…"
   },
@@ -4855,6 +4975,9 @@
   },
   "icu:Stories__placeholder--text": {
     "messageformat": "Кликнете, за да видите някоя история"
+  },
+  "icu:Stories__placeholder-with-icon--text-2": {
+    "messageformat": "Кликнете върху <newStoryButtonIcon></newStoryButtonIcon>, за да добавите актуализация."
   },
   "icu:Stories__from-to-group": {
     "messageformat": "{name} към {group}"
@@ -5096,7 +5219,10 @@
   "icu:StoryViewsNRepliesModal__tab--replies": {
     "messageformat": "Отговори"
   },
-  "icu:StoryViewsNRepliesModal__reacted": {
+  "icu:StoryViewsNRepliesModal__reacted--you": {
+    "messageformat": "Реагира на историята ти"
+  },
+  "icu:StoryViewsNRepliesModal__reacted--someone-else": {
     "messageformat": "Реагира на историята"
   },
   "icu:StoryViewsNRepliesModal__not-a-member": {
@@ -5115,7 +5241,7 @@
     "messageformat": "История"
   },
   "icu:StoryListItem__unhide": {
-    "messageformat": "Показване на истории"
+    "messageformat": "Откриване на история"
   },
   "icu:StoryListItem__hide": {
     "messageformat": "Скриване на история"
@@ -5386,7 +5512,10 @@
     "messageformat": "Изчистване на историята на повикванията?"
   },
   "icu:CallsTab__ConfirmClearCallHistory__Body": {
-    "messageformat": "Това перманентно ще изтрие цялата история на повикванията"
+    "messageformat": "Това перманентно ще изтрие цялата история на повикванията."
+  },
+  "icu:CallsTab__ConfirmClearCallHistory__Body--call-links": {
+    "messageformat": "Това перманентно ще изтрие цялата история на повикванията. Създадените от вас линкове за разговори повече няма да работят за хората, които ги имат. "
   },
   "icu:CallsTab__ConfirmClearCallHistory__ConfirmButton": {
     "messageformat": "Изчистване"
@@ -5394,8 +5523,14 @@
   "icu:CallsTab__ToastCallHistoryCleared": {
     "messageformat": "Историята на Обажданията е Изчистена"
   },
-  "icu:CallsTab__EmptyStateText": {
-    "messageformat": "Кликнете, за да видите или започнете обаждане"
+  "icu:CallsTab__ClearCallHistoryError--call-links": {
+    "messageformat": "Не всички линкове за разговори можаха да бъдат изтрити. Проверете връзката си и опитайте отново."
+  },
+  "icu:CallsTab__ClearCallHistoryError": {
+    "messageformat": "Неуспешно изчистване на цялата история на повикванията. Проверете връзката си и опитайте отново."
+  },
+  "icu:CallsTab__EmptyStateText--with-icon-2": {
+    "messageformat": "Кликнете върху <newCallButtonIcon></newCallButtonIcon>, за да започнете ново гласово или видео обаждане."
   },
   "icu:CallsList__SearchInputPlaceholder": {
     "messageformat": "Търсене"
@@ -5406,8 +5541,17 @@
   "icu:CallsList__ToggleFilterByMissed__RoleDescription": {
     "messageformat": "Превключване"
   },
-  "icu:CallsList__EmptyState--noQuery": {
-    "messageformat": "Няма скорошни обаждания. Започнете, като се обадите на приятел."
+  "icu:CallsList__EmptyState--noQuery__title": {
+    "messageformat": "Няма обаждания"
+  },
+  "icu:CallsList__EmptyState--noQuery__subtitle": {
+    "messageformat": "Последните повиквания ще се появяват тук."
+  },
+  "icu:CallsList__EmptyState--noQuery--missed__title": {
+    "messageformat": "Няма пропуснати повиквания"
+  },
+  "icu:CallsList__EmptyState--noQuery--missed__subtitle": {
+    "messageformat": "Пропуснатите повиквания ще се появяват тук."
   },
   "icu:CallsList__EmptyState--hasQuery": {
     "messageformat": "Не са открити резултати за „{query}“"
@@ -5424,8 +5568,8 @@
   "icu:CallsList__ItemCallInfo--Missed": {
     "messageformat": "Пропуснато"
   },
-  "icu:CallsList__ItemCallInfo--GroupCall": {
-    "messageformat": "Групов разговор"
+  "icu:CallsList__ItemCallInfo--Declined": {
+    "messageformat": "Отказано"
   },
   "icu:CallsList__ItemCallInfo--CallLink": {
     "messageformat": "Линк за повикване"
@@ -5451,32 +5595,59 @@
   "icu:CallsNewCallButton--return": {
     "messageformat": "Връщане"
   },
-  "icu:CallsNewCallButtonTooltip--in-another-call": {
-    "messageformat": "Трябва да излезете от текущия разговор, преди да се присъедините към нов разговор"
-  },
-  "icu:CallHistory__Description--Default": {
-    "messageformat": "{type, select, Audio {{direction, select, Outgoing {Изходящо гласово повикване} other {Входящо гласово повикване}}} Video {{direction, select, Outgoing {Изходящо видео повикване} other {Входящо видео повикване}}} Group {{direction, select, Outgoing {Изходящо групово повикване} other {Входящо групово повикване}}} other {{direction, select, Outgoing {Изходящо повикване} other {Входящо обаждане}}}}"
-  },
-  "icu:CallHistory__Description--Missed": {
-    "messageformat": "{type, select, Audio {Пропуснато гласово повикване} Video {Пропуснато видео повикване} Group {Пропуснато групово повикване} other {Пропуснато обаждане}}"
-  },
-  "icu:CallHistory__Description--Unanswered": {
-    "messageformat": "{type, select, Audio {Гласово повикване без отговор} Video {Неотговорено видео повикване} Group {Неотговорено групово обаждане} other {Неотговорено обаждане}}"
-  },
-  "icu:CallHistory__Description--Declined": {
-    "messageformat": "{type, select, Audio {Отказано гласово обаждане} Video {Отказано видео обаждане} Group {Отказано групово обаждане} other {Отказано обаждане}}"
-  },
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "Линк за повикване"
   },
+  "icu:CallHistory__DescriptionVideoCall--Default": {
+    "messageformat": "{direction, select, Outgoing {Изходящо видео повикване} other {Входящо видео повикване}}"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Missed": {
+    "messageformat": "Пропуснато видео повикване"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Unanswered": {
+    "messageformat": "Неотговорено видео повикване"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Declined": {
+    "messageformat": "Отказано видео обаждане"
+  },
   "icu:CallLinkDetails__Join": {
     "messageformat": "Присъединяване"
+  },
+  "icu:CallLinkDetails__AddCallNameLabel": {
+    "messageformat": "Добавяне на име на обаждането"
+  },
+  "icu:CallLinkDetails__EditCallNameLabel": {
+    "messageformat": "Редактиране на име на обаждането"
+  },
+  "icu:CallLinkDetails__ApproveAllMembersLabel": {
+    "messageformat": "Изискване на одобрение от администратор"
+  },
+  "icu:CallLinkDetails__SettingTooltip--disabled-for-active-call": {
+    "messageformat": "Тази настройка не може да се променя, докато повикването е активно"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "Копиране на линка"
   },
   "icu:CallLinkDetails__ShareLinkViaSignal": {
     "messageformat": "Споделяне на линк чрез Signal"
+  },
+  "icu:CallLinkDetails__DeleteLink": {
+    "messageformat": "Изтриване на линк"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Title": {
+    "messageformat": "Изтриване на линк за разговор?"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Body": {
+    "messageformat": "Този линк повече няма да работи за никого."
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
+    "messageformat": "Отказ"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Delete": {
+    "messageformat": "Изтриване"
+  },
+  "icu:CallLinkDetails__DeleteLinkTooltip--disabled-for-active-call": {
+    "messageformat": "Този линк не може да бъде изтрит, докато повикването е активно"
   },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "Подробности за линк за разговор"
@@ -5487,17 +5658,29 @@
   "icu:CallLinkEditModal__AddCallNameLabel": {
     "messageformat": "Добавяне на име на обаждането"
   },
-  "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
-    "messageformat": "Одобряване на всички членове"
+  "icu:CallLinkEditModal__EditCallNameLabel": {
+    "messageformat": "Редактиране на име на обаждането"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--Off": {
+  "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
+    "messageformat": "Изискване на одобрение от администратор"
+  },
+  "icu:CallLinkPendingParticipantModal__ApproveButtonLabel": {
+    "messageformat": "Одобряване на вход"
+  },
+  "icu:CallLinkPendingParticipantModal__DenyButtonLabel": {
+    "messageformat": "Отхвърляне на вход"
+  },
+  "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "Изкл."
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--On": {
+  "icu:CallLinkRestrictionsSelect__Option--On": {
     "messageformat": "Вкл."
   },
   "icu:CallLinkAddNameModal__Title": {
     "messageformat": "Добавяне на име на обаждането"
+  },
+  "icu:CallLinkAddNameModal__Title--Edit": {
+    "messageformat": "Редактиране на име на обаждането"
   },
   "icu:CallLinkAddNameModal__NameLabel": {
     "messageformat": "Име на обаждането"
@@ -5542,10 +5725,22 @@
     "messageformat": "Дребни корекции, поправки на бъгове и подобрения на работата. Благодарим ви, че използвате Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.16--0": {
-    "messageformat": "Коригирахме грешка, която не позволяваше на бутона за минимизиране на разговор да се показва, докато разговорът се свързва повторно."
+  "icu:WhatsNew__v7.29--0": {
+    "messageformat": "Тази актуализация подобрява скоростта на стартиране с около 5%."
   },
-  "icu:WhatsNew__v7.17--0": {
-    "messageformat": "We wanted things to be slicker and quicker for sticker clickers, so we fixed a bug that sometimes prevented Signal from launching the sticker viewer if you tried to open a sticker pack link while the app was closed."
+  "icu:WhatsNew__v7.30--header": {
+    "messageformat": "Линкове за разговор: идеални за покани в календара и импровизирани срещи."
+  },
+  "icu:WhatsNew__v7.30--0": {
+    "messageformat": "Вече можете да създадете линк, с който всеки в Signal може да се присъедини към групов разговор, без първо да се присъединява към групов чат."
+  },
+  "icu:WhatsNew__v7.30--1": {
+    "messageformat": "Тези линкове са за многократна употреба и са идеални за редовни разговори с най-добрите ви приятели или за седмични обсъждания с колеги."
+  },
+  "icu:WhatsNew__v7.30--2": {
+    "messageformat": "Можете да управлявате линковете и настройките за одобрение и да копирате линковете от раздела за разговори за бързо споделяне."
+  },
+  "icu:WhatsNew__v7.31--0": {
+    "messageformat": "Now you can quickly download every photo in an album when you receive a message with multiple attachments. But if you were a gallery curator with impeccable taste in another life, you can still save them individually too. Thanks, <linkMajorMayer>@major-mayer</linkMajorMayer>!"
   }
 }

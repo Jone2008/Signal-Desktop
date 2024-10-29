@@ -1,7 +1,11 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { Net } from '@signalapp/libsignal-client';
+import {
+  ErrorCode,
+  LibSignalErrorBase,
+  type Net,
+} from '@signalapp/libsignal-client';
 import URL from 'url';
 import type { RequestInit, Response } from 'node-fetch';
 import { Headers } from 'node-fetch';
@@ -13,14 +17,14 @@ import { AbortableProcess } from '../util/AbortableProcess';
 import { strictAssert } from '../util/assert';
 import {
   BackOff,
-  FIBONACCI_TIMEOUTS,
   EXTENDED_FIBONACCI_TIMEOUTS,
+  FIBONACCI_TIMEOUTS,
 } from '../util/BackOff';
 import * as durations from '../util/durations';
 import { sleep } from '../util/sleep';
 import { drop } from '../util/drop';
-import { createProxyAgent } from '../util/createProxyAgent';
 import type { ProxyAgent } from '../util/createProxyAgent';
+import { createProxyAgent } from '../util/createProxyAgent';
 import { SocketStatus } from '../types/SocketStatus';
 import * as Errors from '../types/errors';
 import * as Bytes from '../Bytes';
@@ -32,7 +36,9 @@ import type {
   WebSocketResourceOptions,
 } from './WebsocketResources';
 import WebSocketResource, {
-  LibsignalWebSocketResource,
+  connectAuthenticatedLibsignal,
+  connectUnauthenticatedLibsignal,
+  ServerRequestType,
   TransportOption,
   WebSocketResourceWithShadowing,
 } from './WebsocketResources';
@@ -40,6 +46,7 @@ import { ConnectTimeoutError, HTTPError } from './Errors';
 import type { IRequestHandler, WebAPICredentials } from './Types.d';
 import { connect as connectWebSocket } from './WebSocket';
 import { isAlpha, isBeta, isStaging } from '../util/version';
+import { getBasicAuth } from '../util/getBasicAuth';
 
 const FIVE_MINUTES = 5 * durations.MINUTE;
 
@@ -49,6 +56,8 @@ const OFFLINE_KEEPALIVE_TIMEOUT_MS = 5 * durations.SECOND;
 export const UNAUTHENTICATED_CHANNEL_NAME = 'unauthenticated';
 
 export const AUTHENTICATED_CHANNEL_NAME = 'authenticated';
+
+export const NORMAL_DISCONNECT_CODE = 3000;
 
 export type SocketManagerOptions = Readonly<{
   url: string;
@@ -102,6 +111,8 @@ export class SocketManager extends EventListener {
   private hasStoriesDisabled: boolean;
 
   private reconnectController: AbortController | undefined;
+
+  private envelopeCount = 0;
 
   constructor(
     private readonly libsignalNet: Net.Net,
@@ -166,22 +177,39 @@ export class SocketManager extends EventListener {
 
     this.setStatus(SocketStatus.CONNECTING);
 
-    const process = this.connectResource({
-      name: AUTHENTICATED_CHANNEL_NAME,
-      path: '/v1/websocket/',
-      query: { login: username, password },
-      proxyAgent: await this.getProxyAgent(),
-      resourceOptions: {
-        name: AUTHENTICATED_CHANNEL_NAME,
-        keepalive: { path: '/v1/keepalive' },
-        handleRequest: (req: IncomingWebSocketRequest): void => {
-          this.queueOrHandleRequest(req);
-        },
-      },
-      extraHeaders: {
-        'X-Signal-Receive-Stories': String(!this.hasStoriesDisabled),
-      },
-    });
+    const proxyAgent = await this.getProxyAgent();
+    const useLibsignalTransport =
+      window.Signal.RemoteConfig.isEnabled(
+        'desktop.experimentalTransport.enableAuth'
+      ) && this.transportOption(proxyAgent) === TransportOption.Libsignal;
+
+    const process = useLibsignalTransport
+      ? connectAuthenticatedLibsignal({
+          libsignalNet: this.libsignalNet,
+          name: AUTHENTICATED_CHANNEL_NAME,
+          credentials: this.credentials,
+          handler: (req: IncomingWebSocketRequest): void => {
+            this.queueOrHandleRequest(req);
+          },
+          receiveStories: !this.hasStoriesDisabled,
+          keepalive: { path: '/v1/keepalive' },
+        })
+      : this.connectResource({
+          name: AUTHENTICATED_CHANNEL_NAME,
+          path: '/v1/websocket/',
+          resourceOptions: {
+            name: AUTHENTICATED_CHANNEL_NAME,
+            keepalive: { path: '/v1/keepalive' },
+            handleRequest: (req: IncomingWebSocketRequest): void => {
+              this.queueOrHandleRequest(req);
+            },
+          },
+          extraHeaders: {
+            Authorization: getBasicAuth({ username, password }),
+            'X-Signal-Receive-Stories': String(!this.hasStoriesDisabled),
+          },
+          proxyAgent,
+        });
 
     // Cancel previous connect attempt or close socket
     this.authenticated?.abort();
@@ -254,7 +282,7 @@ export class SocketManager extends EventListener {
         const { code } = error;
 
         if (code === 401 || code === 403) {
-          this.emit('authError', error);
+          this.emit('authError');
           return;
         }
 
@@ -268,6 +296,18 @@ export class SocketManager extends EventListener {
         }
       } else if (error instanceof ConnectTimeoutError) {
         this.markOffline();
+      } else if (
+        error instanceof LibSignalErrorBase &&
+        error.code === ErrorCode.DeviceDelinked
+      ) {
+        this.emit('authError');
+        return;
+      } else if (
+        error instanceof LibSignalErrorBase &&
+        error.code === ErrorCode.AppExpired
+      ) {
+        window.Whisper.events.trigger('httpResponse499');
+        return;
       }
 
       drop(reconnect());
@@ -279,6 +319,7 @@ export class SocketManager extends EventListener {
     );
 
     window.logAuthenticatedConnect?.();
+    this.envelopeCount = 0;
     this.backOff.reset();
 
     authenticated.addEventListener('close', ({ code, reason }): void => {
@@ -292,7 +333,7 @@ export class SocketManager extends EventListener {
       );
       this.dropAuthenticated(process);
 
-      if (code === 3000) {
+      if (code === NORMAL_DISCONNECT_CODE) {
         // Intentional disconnect
         return;
       }
@@ -574,14 +615,12 @@ export class SocketManager extends EventListener {
       : TransportOption.Original;
   }
 
-  private connectLibsignalUnauthenticated(): AbortableProcess<IWebSocketResource> {
-    return LibsignalWebSocketResource.connect(
-      this.libsignalNet,
-      UNAUTHENTICATED_CHANNEL_NAME
-    );
-  }
-
   private async getUnauthenticatedResource(): Promise<IWebSocketResource> {
+    // awaiting on `this.getProxyAgent()` needs to happen here
+    // so that there are no calls to `await` between checking
+    // the value of `this.unauthenticated` and assigning it later in this function
+    const proxyAgent = await this.getProxyAgent();
+
     if (this.unauthenticated) {
       return this.unauthenticated.getResult();
     }
@@ -596,8 +635,6 @@ export class SocketManager extends EventListener {
 
     log.info('SocketManager: connecting unauthenticated socket');
 
-    const proxyAgent = await this.getProxyAgent();
-
     const transportOption = this.transportOption(proxyAgent);
     log.info(
       `SocketManager: connecting unauthenticated socket, transport option [${transportOption}]`
@@ -606,7 +643,11 @@ export class SocketManager extends EventListener {
     let process: AbortableProcess<IWebSocketResource>;
 
     if (transportOption === TransportOption.Libsignal) {
-      process = this.connectLibsignalUnauthenticated();
+      process = connectUnauthenticatedLibsignal({
+        libsignalNet: this.libsignalNet,
+        name: UNAUTHENTICATED_CHANNEL_NAME,
+        keepalive: { path: '/v1/keepalive' },
+      });
     } else {
       process = this.connectResource({
         name: UNAUTHENTICATED_CHANNEL_NAME,
@@ -724,10 +765,11 @@ export class SocketManager extends EventListener {
     options: WebSocketResourceOptions
   ): AbortableProcess<IWebSocketResource> {
     // creating an `AbortableProcess` of libsignal websocket connection
-    const shadowingConnection = LibsignalWebSocketResource.connect(
-      this.libsignalNet,
-      options.name
-    );
+    const shadowingConnection = connectUnauthenticatedLibsignal({
+      libsignalNet: this.libsignalNet,
+      name: options.name,
+      keepalive: options.keepalive ?? {},
+    });
     const shadowWrapper = async () => {
       // if main connection results in an error,
       // it's propagated as the error of the resulting process
@@ -842,6 +884,12 @@ export class SocketManager extends EventListener {
   }
 
   private queueOrHandleRequest(req: IncomingWebSocketRequest): void {
+    if (req.requestType === ServerRequestType.ApiMessage) {
+      this.envelopeCount += 1;
+      if (this.envelopeCount === 1) {
+        this.emit('firstEnvelope', req);
+      }
+    }
     if (this.requestHandlers.size === 0) {
       this.incomingRequestQueue.push(req);
       log.info(
@@ -899,13 +947,14 @@ export class SocketManager extends EventListener {
 
   // EventEmitter types
 
-  public override on(
-    type: 'authError',
-    callback: (error: HTTPError) => void
-  ): this;
+  public override on(type: 'authError', callback: () => void): this;
   public override on(type: 'statusChange', callback: () => void): this;
   public override on(type: 'online', callback: () => void): this;
   public override on(type: 'offline', callback: () => void): this;
+  public override on(
+    type: 'firstEnvelope',
+    callback: (incoming: IncomingWebSocketRequest) => void
+  ): this;
 
   public override on(
     type: string | symbol,
@@ -915,10 +964,14 @@ export class SocketManager extends EventListener {
     return super.on(type, listener);
   }
 
-  public override emit(type: 'authError', error: HTTPError): boolean;
+  public override emit(type: 'authError'): boolean;
   public override emit(type: 'statusChange'): boolean;
   public override emit(type: 'online'): boolean;
   public override emit(type: 'offline'): boolean;
+  public override emit(
+    type: 'firstEnvelope',
+    incoming: IncomingWebSocketRequest
+  ): boolean;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public override emit(type: string | symbol, ...args: Array<any>): boolean {

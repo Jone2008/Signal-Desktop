@@ -14,7 +14,7 @@ import {
   AttachmentPermanentlyUndownloadableError,
   downloadAttachment as downloadAttachmentUtil,
 } from '../util/downloadAttachment';
-import dataInterface from '../sql/Client';
+import { DataWriter } from '../sql/Client';
 import { getValue } from '../RemoteConfig';
 
 import { isInCall as isInCallSelector } from '../state/selectors/calling';
@@ -42,6 +42,10 @@ import {
   isVideoTypeSupported,
 } from '../util/GoogleChrome';
 import type { MIMEType } from '../types/MIME';
+import { AttachmentDownloadSource } from '../sql/Interface';
+import { drop } from '../util/drop';
+import { getAttachmentCiphertextLength } from '../AttachmentCrypto';
+import { safeParsePartial } from '../util/schemas';
 
 export enum AttachmentDownloadUrgency {
   IMMEDIATE = 'immediate',
@@ -55,6 +59,7 @@ export type NewAttachmentDownloadJobType = {
   receivedAt: number;
   sentAt: number;
   attachmentType: AttachmentDownloadJobTypeType;
+  source: AttachmentDownloadSource;
   urgency?: AttachmentDownloadUrgency;
 };
 
@@ -69,6 +74,10 @@ const DEFAULT_RETRY_CONFIG = {
     maxBackoffTime: 6 * durations.HOUR,
   },
 };
+const BACKUP_RETRY_CONFIG = {
+  ...DEFAULT_RETRY_CONFIG,
+  maxAttempts: Infinity,
+};
 type AttachmentDownloadManagerParamsType = Omit<
   JobManagerParamsType<CoreAttachmentDownloadJobType>,
   'getNextJobs' | 'runJob'
@@ -76,13 +85,14 @@ type AttachmentDownloadManagerParamsType = Omit<
   getNextJobs: (options: {
     limit: number;
     prioritizeMessageIds?: Array<string>;
+    sources?: Array<AttachmentDownloadSource>;
     timestamp?: number;
   }) => Promise<Array<AttachmentDownloadJobType>>;
   runDownloadAttachmentJob: (args: {
     job: AttachmentDownloadJobType;
     isLastAttempt: boolean;
     options?: { isForCurrentlyVisibleMessage: boolean };
-    dependencies: { downloadAttachment: typeof downloadAttachmentUtil };
+    dependencies?: DependenciesType;
   }) => Promise<JobManagerJobResultType<CoreAttachmentDownloadJobType>>;
 };
 
@@ -103,10 +113,10 @@ export class AttachmentDownloadManager extends JobManager<CoreAttachmentDownload
   override logPrefix = 'AttachmentDownloadManager';
 
   static defaultParams: AttachmentDownloadManagerParamsType = {
-    markAllJobsInactive: dataInterface.resetAttachmentDownloadActive,
-    saveJob: dataInterface.saveAttachmentDownloadJob,
-    removeJob: dataInterface.removeAttachmentDownloadJob,
-    getNextJobs: dataInterface.getNextAttachmentDownloadJobs,
+    markAllJobsInactive: DataWriter.resetAttachmentDownloadActive,
+    saveJob: DataWriter.saveAttachmentDownloadJob,
+    removeJob: DataWriter.removeAttachmentDownloadJob,
+    getNextJobs: DataWriter.getNextAttachmentDownloadJobs,
     runDownloadAttachmentJob,
     shouldHoldOffOnStartingQueuedJobs: () => {
       const reduxState = window.reduxStore?.getState();
@@ -117,7 +127,10 @@ export class AttachmentDownloadManager extends JobManager<CoreAttachmentDownload
     },
     getJobId,
     getJobIdForLogging,
-    getRetryConfig: () => DEFAULT_RETRY_CONFIG,
+    getRetryConfig: job =>
+      job.attachment.backupLocator?.mediaName
+        ? BACKUP_RETRY_CONFIG
+        : DEFAULT_RETRY_CONFIG,
     maxConcurrentJobs: MAX_CONCURRENT_JOBS,
   };
 
@@ -128,6 +141,9 @@ export class AttachmentDownloadManager extends JobManager<CoreAttachmentDownload
         return params.getNextJobs({
           limit,
           prioritizeMessageIds: [...this.visibleTimelineMessages],
+          sources: window.storage.get('backupMediaDownloadPaused')
+            ? [AttachmentDownloadSource.STANDARD]
+            : undefined,
           timestamp: Date.now(),
         });
       },
@@ -141,7 +157,6 @@ export class AttachmentDownloadManager extends JobManager<CoreAttachmentDownload
           options: {
             isForCurrentlyVisibleMessage,
           },
-          dependencies: { downloadAttachment: downloadAttachmentUtil },
         });
       },
     });
@@ -157,9 +172,10 @@ export class AttachmentDownloadManager extends JobManager<CoreAttachmentDownload
       attachmentType,
       receivedAt,
       sentAt,
+      source,
       urgency = AttachmentDownloadUrgency.STANDARD,
     } = newJobData;
-    const parseResult = coreAttachmentDownloadJobSchema.safeParse({
+    const parseResult = safeParsePartial(coreAttachmentDownloadJobSchema, {
       messageId,
       receivedAt,
       sentAt,
@@ -167,7 +183,9 @@ export class AttachmentDownloadManager extends JobManager<CoreAttachmentDownload
       digest: attachment.digest,
       contentType: attachment.contentType,
       size: attachment.size,
+      ciphertextSize: getAttachmentCiphertextLength(attachment.size),
       attachment,
+      source,
     });
 
     if (!parseResult.success) {
@@ -180,18 +198,11 @@ export class AttachmentDownloadManager extends JobManager<CoreAttachmentDownload
 
     const newJob = parseResult.data;
 
-    const { isAlreadyRunning } = await this._addJob(newJob, {
+    await this._addJob(newJob, {
       forceStart: urgency === AttachmentDownloadUrgency.IMMEDIATE,
     });
 
-    if (isAlreadyRunning) {
-      return attachment;
-    }
-
-    return {
-      ...attachment,
-      pending: !this.params.shouldHoldOffOnStartingQueuedJobs?.(),
-    };
+    return attachment;
   }
 
   updateVisibleTimelineMessages(messageIds: Array<string>): void {
@@ -208,12 +219,10 @@ export class AttachmentDownloadManager extends JobManager<CoreAttachmentDownload
   }
 
   static async start(): Promise<void> {
-    log.info('AttachmentDownloadManager/starting');
     await AttachmentDownloadManager.instance.start();
   }
 
   static async stop(): Promise<void> {
-    log.info('AttachmentDownloadManager/stopping');
     return AttachmentDownloadManager._instance?.stop();
   }
 
@@ -229,16 +238,24 @@ export class AttachmentDownloadManager extends JobManager<CoreAttachmentDownload
     );
   }
 }
+
+type DependenciesType = {
+  downloadAttachment: typeof downloadAttachmentUtil;
+  processNewAttachment: typeof window.Signal.Migrations.processNewAttachment;
+};
 async function runDownloadAttachmentJob({
   job,
   isLastAttempt,
   options,
-  dependencies,
+  dependencies = {
+    downloadAttachment: downloadAttachmentUtil,
+    processNewAttachment: window.Signal.Migrations.processNewAttachment,
+  },
 }: {
   job: AttachmentDownloadJobType;
   isLastAttempt: boolean;
   options?: { isForCurrentlyVisibleMessage: boolean };
-  dependencies: { downloadAttachment: typeof downloadAttachmentUtil };
+  dependencies?: DependenciesType;
 }): Promise<JobManagerJobResultType<CoreAttachmentDownloadJobType>> {
   const jobIdForLogging = getJobIdForLogging(job);
   const logId = `AttachmentDownloadManager/runDownloadAttachmentJob/${jobIdForLogging}`;
@@ -260,11 +277,22 @@ async function runDownloadAttachmentJob({
       dependencies,
     });
 
-    if (result.onlyAttemptedBackupThumbnail) {
+    if (result.downloadedVariant === AttachmentVariant.ThumbnailFromBackup) {
       return {
         status: 'finished',
         newJob: { ...job, attachment: result.attachmentWithThumbnail },
       };
+    }
+
+    if (job.attachment.backupLocator?.mediaName) {
+      const currentDownloadedSize =
+        window.storage.get('backupMediaDownloadCompletedBytes') ?? 0;
+      drop(
+        window.storage.put(
+          'backupMediaDownloadCompletedBytes',
+          currentDownloadedSize + job.ciphertextSize
+        )
+      );
     }
 
     return {
@@ -321,18 +349,16 @@ async function runDownloadAttachmentJob({
   } finally {
     // This will fail if the message has been deleted before the download finished, which
     // is good
-    await dataInterface.saveMessage(message.attributes, {
+    await DataWriter.saveMessage(message.attributes, {
       ourAci: window.textsecure.storage.user.getCheckedAci(),
     });
   }
 }
 
 type DownloadAttachmentResultType =
+  | { downloadedVariant: AttachmentVariant.Default }
   | {
-      onlyAttemptedBackupThumbnail: false;
-    }
-  | {
-      onlyAttemptedBackupThumbnail: true;
+      downloadedVariant: AttachmentVariant.ThumbnailFromBackup;
       attachmentWithThumbnail: AttachmentType;
     };
 
@@ -343,7 +369,7 @@ export async function runDownloadAttachmentJobInner({
 }: {
   job: AttachmentDownloadJobType;
   isForCurrentlyVisibleMessage: boolean;
-  dependencies: { downloadAttachment: typeof downloadAttachmentUtil };
+  dependencies: DependenciesType;
 }): Promise<DownloadAttachmentResultType> {
   const { messageId, attachment, attachmentType } = job;
 
@@ -395,7 +421,7 @@ export async function runDownloadAttachmentJobInner({
         type: attachmentType,
       });
       return {
-        onlyAttemptedBackupThumbnail: true,
+        downloadedVariant: AttachmentVariant.ThumbnailFromBackup,
         attachmentWithThumbnail,
       };
     } catch (e) {
@@ -418,16 +444,15 @@ export async function runDownloadAttachmentJobInner({
       variant: AttachmentVariant.Default,
     });
 
-    const upgradedAttachment =
-      await window.Signal.Migrations.processNewAttachment({
-        ...omit(attachment, ['error', 'pending']),
-        ...downloaded,
-      });
+    const upgradedAttachment = await dependencies.processNewAttachment({
+      ...omit(attachment, ['error', 'pending', 'downloadPath']),
+      ...downloaded,
+    });
 
     await addAttachmentToMessage(messageId, upgradedAttachment, logId, {
       type: attachmentType,
     });
-    return { onlyAttemptedBackupThumbnail: false };
+    return { downloadedVariant: AttachmentVariant.Default };
   } catch (error) {
     if (
       !job.attachment.thumbnailFromBackup &&
@@ -439,20 +464,24 @@ export async function runDownloadAttachmentJobInner({
         Errors.toLogFormat(error)
       );
       try {
-        const attachmentWithThumbnail = await downloadBackupThumbnail({
-          attachment,
-          dependencies,
-        });
+        const attachmentWithThumbnail = omit(
+          await downloadBackupThumbnail({
+            attachment,
+            dependencies,
+          }),
+          'pending'
+        );
         await addAttachmentToMessage(
           messageId,
-          omit(attachmentWithThumbnail, 'pending'),
+          attachmentWithThumbnail,
           logId,
           {
             type: attachmentType,
           }
         );
         return {
-          onlyAttemptedBackupThumbnail: false,
+          downloadedVariant: AttachmentVariant.ThumbnailFromBackup,
+          attachmentWithThumbnail,
         };
       } catch (thumbnailError) {
         log.error(

@@ -7,22 +7,24 @@ import { SendStatus } from '../../messages/MessageSendState';
 import type { ConversationModel } from '../../models/conversations';
 import { GiftBadgeStates } from '../../components/conversation/Message';
 
-import Data from '../../sql/Client';
+import { DataWriter } from '../../sql/Client';
 import { getRandomBytes } from '../../Crypto';
 import * as Bytes from '../../Bytes';
 import { generateAci } from '../../types/ServiceId';
 import { ReadStatus } from '../../messages/MessageReadStatus';
 import { SeenStatus } from '../../MessageSeenStatus';
-import { loadCallsHistory } from '../../services/callHistoryLoader';
 import { ID_V1_LENGTH } from '../../groups';
+import { DurationInSeconds, WEEK } from '../../util/durations';
 import {
   setupBasics,
   asymmetricRoundtripHarness,
   symmetricRoundtripHarness,
   OUR_ACI,
 } from './helpers';
+import { loadAllAndReinitializeRedux } from '../../services/allLoaders';
 
 const CONTACT_A = generateAci();
+const CONTACT_B = generateAci();
 const GV1_ID = Bytes.toBinary(getRandomBytes(ID_V1_LENGTH));
 
 const BADGE_RECEIPT =
@@ -36,11 +38,12 @@ const BADGE_RECEIPT =
 
 describe('backup/bubble messages', () => {
   let contactA: ConversationModel;
+  let contactB: ConversationModel;
   let gv1: ConversationModel;
 
   beforeEach(async () => {
-    await Data._removeAllMessages();
-    await Data._removeAllConversations();
+    await DataWriter._removeAllMessages();
+    await DataWriter._removeAllConversations();
     window.storage.reset();
 
     await setupBasics();
@@ -48,7 +51,12 @@ describe('backup/bubble messages', () => {
     contactA = await window.ConversationController.getOrCreateAndWait(
       CONTACT_A,
       'private',
-      { systemGivenName: 'CONTACT_A' }
+      { systemGivenName: 'CONTACT_A', active_at: 1 }
+    );
+    contactB = await window.ConversationController.getOrCreateAndWait(
+      CONTACT_B,
+      'private',
+      { systemGivenName: 'CONTACT_B', active_at: 1 }
     );
 
     gv1 = await window.ConversationController.getOrCreateAndWait(
@@ -56,10 +64,11 @@ describe('backup/bubble messages', () => {
       'group',
       {
         groupVersion: 1,
+        active_at: 1,
       }
     );
 
-    await loadCallsHistory();
+    await loadAllAndReinitializeRedux();
   });
 
   it('roundtrips incoming edited message', async () => {
@@ -85,18 +94,24 @@ describe('backup/bubble messages', () => {
             timestamp: 5,
             received_at: 5,
             received_at_ms: 5,
+            readStatus: ReadStatus.Unread,
+            unidentifiedDeliveryReceived: true,
           },
           {
             body: 'c',
             timestamp: 4,
             received_at: 4,
             received_at_ms: 4,
+            readStatus: ReadStatus.Unread,
+            unidentifiedDeliveryReceived: false,
           },
           {
             body: 'b',
             timestamp: 3,
             received_at: 3,
             received_at_ms: 3,
+            readStatus: ReadStatus.Read,
+            unidentifiedDeliveryReceived: false,
           },
         ],
       },
@@ -109,8 +124,10 @@ describe('backup/bubble messages', () => {
         conversationId: contactA.id,
         id: generateGuid(),
         type: 'outgoing',
+        readStatus: ReadStatus.Read,
         received_at: 3,
         received_at_ms: 3,
+        seenStatus: SeenStatus.Seen,
         sent_at: 3,
         sourceServiceId: OUR_ACI,
         sendStateByConversationId: {
@@ -315,8 +332,10 @@ describe('backup/bubble messages', () => {
         conversationId: contactA.id,
         id: generateGuid(),
         type: 'outgoing',
+        readStatus: ReadStatus.Read,
         received_at: 4,
         received_at_ms: 4,
+        seenStatus: SeenStatus.Seen,
         sent_at: 4,
         sourceServiceId: OUR_ACI,
         sendStateByConversationId: {
@@ -345,12 +364,15 @@ describe('backup/bubble messages', () => {
           [contactA.id]: {
             status: SendStatus.Delivered,
           },
+          [contactB.id]: {
+            status: SendStatus.Failed,
+          },
         },
         errors: [
           {
-            serviceId: CONTACT_A,
+            serviceId: CONTACT_B,
             name: 'OutgoingIdentityKeyError',
-            message: `The identity of ${CONTACT_A} has changed.`,
+            message: `The identity of ${CONTACT_B} has changed.`,
           },
         ],
         timestamp: 3,
@@ -360,12 +382,17 @@ describe('backup/bubble messages', () => {
         conversationId: contactA.id,
         id: generateGuid(),
         type: 'outgoing',
+        readStatus: ReadStatus.Read,
         received_at: 4,
         received_at_ms: 4,
+        seenStatus: SeenStatus.Seen,
         sent_at: 4,
         sourceServiceId: OUR_ACI,
         sendStateByConversationId: {
           [contactA.id]: {
+            status: SendStatus.Failed,
+          },
+          [contactB.id]: {
             status: SendStatus.Delivered,
           },
         },
@@ -422,5 +449,50 @@ describe('backup/bubble messages', () => {
       ],
       []
     );
+  });
+
+  it('drops messages that expire soon', async () => {
+    await asymmetricRoundtripHarness(
+      [
+        {
+          conversationId: contactA.id,
+          id: generateGuid(),
+          type: 'incoming',
+          received_at: 3,
+          received_at_ms: 3,
+          sent_at: 3,
+          timestamp: 3,
+          sourceServiceId: CONTACT_A,
+          body: 'd',
+          readStatus: ReadStatus.Unread,
+          seenStatus: SeenStatus.Unseen,
+          unidentifiedDeliveryReceived: true,
+          expirationStartTimestamp: Date.now(),
+          expireTimer: DurationInSeconds.fromSeconds(1),
+        },
+      ],
+      []
+    );
+  });
+
+  it('does not drop messages that expire far in the future', async () => {
+    await symmetricRoundtripHarness([
+      {
+        conversationId: contactA.id,
+        id: generateGuid(),
+        type: 'incoming',
+        received_at: 3,
+        received_at_ms: 3,
+        sent_at: 3,
+        timestamp: 3,
+        sourceServiceId: CONTACT_A,
+        body: 'd',
+        readStatus: ReadStatus.Unread,
+        seenStatus: SeenStatus.Unseen,
+        unidentifiedDeliveryReceived: true,
+        expirationStartTimestamp: Date.now(),
+        expireTimer: DurationInSeconds.fromMillis(WEEK),
+      },
+    ]);
   });
 });

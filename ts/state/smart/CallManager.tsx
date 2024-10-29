@@ -32,12 +32,12 @@ import type {
   ConversationsByDemuxIdType,
   GroupCallRemoteParticipantType,
 } from '../../types/Calling';
-import { CallMode, CallState } from '../../types/Calling';
+import { CallState } from '../../types/Calling';
+import { CallMode } from '../../types/CallDisposition';
 import type { AciString } from '../../types/ServiceId';
 import { strictAssert } from '../../util/assert';
 import { callLinkToConversation } from '../../util/callLinks';
 import { callingTones } from '../../util/callingTones';
-import { isGroupCallRaiseHandEnabled } from '../../util/isGroupCallRaiseHandEnabled';
 import { missingCaseError } from '../../util/missingCaseError';
 import { useAudioPlayerActions } from '../ducks/audioPlayer';
 import { getActiveCall, useCallingActions } from '../ducks/calling';
@@ -45,6 +45,7 @@ import type { ConversationType } from '../ducks/conversations';
 import type { StateType } from '../reducer';
 import { getHasInitialLoadCompleted } from '../selectors/app';
 import {
+  getActiveCallState,
   getAvailableCameras,
   getCallLinkSelector,
   getIncomingCall,
@@ -114,6 +115,10 @@ async function notifyForCall(
   });
 }
 
+function setLocalPreviewContainer(container: HTMLDivElement | null): void {
+  callingService.setLocalPreviewContainer(container);
+}
+
 const playRingtone = callingTones.playRingtone.bind(callingTones);
 const stopRingtone = callingTones.stopRingtone.bind(callingTones);
 
@@ -121,7 +126,7 @@ const mapStateToActiveCallProp = (
   state: StateType
 ): undefined | ActiveCallType => {
   const { calling } = state;
-  const { activeCallState } = calling;
+  const activeCallState = getActiveCallState(state);
 
   if (!activeCallState) {
     return undefined;
@@ -439,15 +444,15 @@ export const SmartCallManager = memo(function SmartCallManager() {
     openSystemPreferencesAction,
     removeClient,
     blockClient,
+    cancelPresenting,
     sendGroupCallRaiseHand,
     sendGroupCallReaction,
+    selectPresentingSource,
     setGroupCallVideoRequest,
     setIsCallActive,
     setLocalAudio,
     setLocalVideo,
-    setLocalPreview,
     setOutgoingRing,
-    setPresenting,
     setRendererCanvas,
     switchToPresentationView,
     switchFromPresentationView,
@@ -457,8 +462,11 @@ export const SmartCallManager = memo(function SmartCallManager() {
     toggleSettings,
   } = useCallingActions();
   const { pauseVoiceNotePlayer } = useAudioPlayerActions();
-  const { showContactModal, showShareCallLinkViaSignal } =
-    useGlobalModalActions();
+  const {
+    showContactModal,
+    showShareCallLinkViaSignal,
+    toggleCallLinkPendingParticipantModal,
+  } = useGlobalModalActions();
 
   return (
     <CallManager
@@ -472,6 +480,7 @@ export const SmartCallManager = memo(function SmartCallManager() {
       bounceAppIconStop={bounceAppIconStop}
       callLink={callLink}
       cancelCall={cancelCall}
+      cancelPresenting={cancelPresenting}
       changeCallView={changeCallView}
       closeNeedPermissionScreen={closeNeedPermissionScreen}
       declineCall={declineCall}
@@ -486,7 +495,6 @@ export const SmartCallManager = memo(function SmartCallManager() {
       i18n={i18n}
       incomingCall={incomingCall}
       isConversationTooBigToRing={isConversationTooBigToRing}
-      isGroupCallRaiseHandEnabled={isGroupCallRaiseHandEnabled()}
       me={me}
       notifyForCall={notifyForCall}
       openSystemPreferencesAction={openSystemPreferencesAction}
@@ -498,13 +506,13 @@ export const SmartCallManager = memo(function SmartCallManager() {
       renderReactionPicker={renderReactionPicker}
       sendGroupCallRaiseHand={sendGroupCallRaiseHand}
       sendGroupCallReaction={sendGroupCallReaction}
+      selectPresentingSource={selectPresentingSource}
       setGroupCallVideoRequest={setGroupCallVideoRequest}
       setIsCallActive={setIsCallActive}
       setLocalAudio={setLocalAudio}
-      setLocalPreview={setLocalPreview}
+      setLocalPreviewContainer={setLocalPreviewContainer}
       setLocalVideo={setLocalVideo}
       setOutgoingRing={setOutgoingRing}
-      setPresenting={setPresenting}
       setRendererCanvas={setRendererCanvas}
       showContactModal={showContactModal}
       showShareCallLinkViaSignal={showShareCallLinkViaSignal}
@@ -512,6 +520,9 @@ export const SmartCallManager = memo(function SmartCallManager() {
       stopRingtone={stopRingtone}
       switchFromPresentationView={switchFromPresentationView}
       switchToPresentationView={switchToPresentationView}
+      toggleCallLinkPendingParticipantModal={
+        toggleCallLinkPendingParticipantModal
+      }
       toggleParticipants={toggleParticipants}
       togglePip={togglePip}
       toggleScreenRecordingPermissionsDialog={

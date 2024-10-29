@@ -11,12 +11,12 @@ import type { PropsType } from './CallingPip';
 import { CallingPip } from './CallingPip';
 import type { ActiveDirectCallType } from '../types/Calling';
 import {
-  CallMode,
   CallViewMode,
   CallState,
   GroupCallConnectionState,
   GroupCallJoinState,
 } from '../types/Calling';
+import { CallMode } from '../types/CallDisposition';
 import { getDefaultConversation } from '../test-both/helpers/getDefaultConversation';
 import { fakeGetGroupCallVideoFrameSource } from '../test-both/helpers/fakeGetGroupCallVideoFrameSource';
 import { setupI18n } from '../util/setupI18n';
@@ -78,7 +78,7 @@ export default {
     hasLocalVideo: false,
     i18n,
     setGroupCallVideoRequest: action('set-group-call-video-request'),
-    setLocalPreview: action('set-local-preview'),
+    setLocalPreviewContainer: action('set-local-preview-container'),
     setRendererCanvas: action('set-renderer-canvas'),
     switchFromPresentationView: action('switch-to-presentation-view'),
     switchToPresentationView: action('switch-to-presentation-view'),

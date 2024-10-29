@@ -1,12 +1,10 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { DesktopCapturerSource } from 'electron';
 import { ipcRenderer } from 'electron';
 import type {
   AudioDevice,
   CallId,
-  CallLinkState as RingRTCCallLinkState,
   DeviceId,
   GroupCallObserver,
   PeekInfo,
@@ -65,20 +63,18 @@ import type {
   AvailableIODevicesType,
   CallEndedReason,
   MediaDeviceSettings,
-  PresentableSource,
   PresentedSource,
 } from '../types/Calling';
 import {
-  CallMode,
   GroupCallConnectionState,
   GroupCallJoinState,
   ScreenShareStatus,
 } from '../types/Calling';
+import { CallMode, LocalCallEvent } from '../types/CallDisposition';
 import {
   findBestMatchingAudioDeviceIndex,
   findBestMatchingCameraId,
 } from '../calling/findBestMatchingDevice';
-import type { LocalizerType } from '../types/Util';
 import { normalizeAci } from '../util/normalizeAci';
 import { isAciString } from '../util/isAciString';
 import * as Errors from '../types/errors';
@@ -92,7 +88,10 @@ import * as durations from '../util/durations';
 import { clearTimeoutIfNecessary } from '../util/clearTimeoutIfNecessary';
 import { fetchMembershipProof, getMembershipList } from '../groups';
 import type { ProcessedEnvelope } from '../textsecure/Types.d';
-import type { GetIceServersResultType } from '../textsecure/WebAPI';
+import type {
+  GetIceServersResultType,
+  IceServerGroupType,
+} from '../textsecure/WebAPI';
 import { missingCaseError } from '../util/missingCaseError';
 import { normalizeGroupCallTimestamp } from '../util/ringrtc/normalizeGroupCallTimestamp';
 import {
@@ -100,17 +99,20 @@ import {
   REQUESTED_VIDEO_WIDTH,
   REQUESTED_VIDEO_HEIGHT,
   REQUESTED_VIDEO_FRAMERATE,
+  REQUESTED_SCREEN_SHARE_WIDTH,
+  REQUESTED_SCREEN_SHARE_HEIGHT,
+  REQUESTED_SCREEN_SHARE_FRAMERATE,
 } from '../calling/constants';
 import { callingMessageToProto } from '../util/callingMessageToProto';
 import { requestMicrophonePermissions } from '../util/requestMicrophonePermissions';
-import OS from '../util/os/osMain';
 import { SignalService as Proto } from '../protobuf';
-import dataInterface from '../sql/Client';
+import { DataReader, DataWriter } from '../sql/Client';
 import {
   notificationService,
   NotificationSetting,
   FALLBACK_NOTIFICATION_TITLE,
   NotificationType,
+  shouldSaveNotificationAvatarToDisk,
 } from './notifications';
 import * as log from '../logging/log';
 import { assertDev, strictAssert } from '../util/assert';
@@ -135,35 +137,35 @@ import {
   getCallDetailsForAdhocCall,
 } from '../util/callDisposition';
 import { isNormalNumber } from '../util/isNormalNumber';
-import { LocalCallEvent } from '../types/CallDisposition';
 import type { AciString, ServiceIdString } from '../types/ServiceId';
 import { isServiceIdString } from '../types/ServiceId';
 import { isInSystemContacts } from '../util/isInSystemContacts';
+import { toAdminKeyBytes } from '../util/callLinks';
 import {
-  getRoomIdFromRootKey,
   getCallLinkAuthCredentialPresentation,
-  toAdminKeyBytes,
+  getRoomIdFromRootKey,
   callLinkRestrictionsToRingRTC,
   callLinkStateFromRingRTC,
-} from '../util/callLinks';
+} from '../util/callLinksRingrtc';
 import { isAdhocCallingEnabled } from '../util/isAdhocCallingEnabled';
 import {
   conversationJobQueue,
   conversationQueueJobEnum,
 } from '../jobs/conversationJobQueue';
-import type {
-  CallLinkType,
-  CallLinkStateType,
-  ReadCallLinkState,
-} from '../types/CallLink';
+import type { CallLinkType, CallLinkStateType } from '../types/CallLink';
 import { CallLinkRestrictions } from '../types/CallLink';
 import { getConversationIdForLogging } from '../util/idForLogging';
+import { sendCallLinkUpdateSync } from '../util/sendCallLinkUpdateSync';
+import { createIdenticon } from '../util/createIdenticon';
+import { getColorForCallLink } from '../util/getColorForCallLink';
+import { getUseRingrtcAdm } from '../util/ringrtc/ringrtcAdm';
+import OS from '../util/os/osMain';
 
+const { wasGroupCallRingPreviouslyCanceled } = DataReader;
 const {
   processGroupCallRingCancellation,
   cleanExpiredGroupCallRingCancellations,
-  wasGroupCallRingPreviouslyCanceled,
-} = dataInterface;
+} = DataWriter;
 
 const RINGRTC_HTTP_METHOD_TO_OUR_HTTP_METHOD: Map<
   HttpMethod,
@@ -194,6 +196,7 @@ type CallingReduxInterface = Pick<
   CallingReduxActionsType,
   | 'callStateChange'
   | 'cancelIncomingGroupCallRing'
+  | 'cancelPresenting'
   | 'groupCallAudioLevelsChange'
   | 'groupCallEnded'
   | 'groupCallRaisedHandsChange'
@@ -206,7 +209,6 @@ type CallingReduxInterface = Pick<
   | 'refreshIODevices'
   | 'remoteSharingScreenChange'
   | 'remoteVideoChange'
-  | 'setPresenting'
   | 'startCallingLobby'
   | 'startCallLinkLobby'
   | 'startCallLinkLobbyByRoomId'
@@ -215,9 +217,13 @@ type CallingReduxInterface = Pick<
   areAnyCallsActiveOrRinging(): boolean;
 };
 
-function isScreenSource(source: PresentedSource): boolean {
-  return source.id.startsWith('screen');
-}
+export type SetPresentingOptionsType = Readonly<{
+  conversationId: string;
+  hasLocalVideo: boolean;
+  mediaStream?: MediaStream;
+  source?: PresentedSource;
+  callLinkRootKey?: string;
+}>;
 
 function truncateForLogging(name: string | undefined): string | undefined {
   if (!name || name.length <= 4) {
@@ -251,29 +257,6 @@ function cleanForLogging(settings?: MediaDeviceSettings): unknown {
     selectedSpeaker: truncateForLogging(settings.selectedSpeaker?.name),
     selectedCamera: settings.selectedCamera,
   };
-}
-
-function translateSourceName(
-  i18n: LocalizerType,
-  source: PresentedSource
-): string {
-  const { name } = source;
-  if (!isScreenSource(source)) {
-    return name;
-  }
-
-  if (name === 'Entire Screen') {
-    return i18n('icu:calling__SelectPresentingSourcesModal--entireScreen');
-  }
-
-  const match = name.match(/^Screen (\d+)$/);
-  if (match) {
-    return i18n('icu:calling__SelectPresentingSourcesModal--screen', {
-      id: match[1],
-    });
-  }
-
-  return name;
 }
 
 function protoToCallingMessage({
@@ -348,9 +331,13 @@ export type NotifyScreenShareStatusOptionsType = Readonly<
 >;
 
 export class CallingClass {
-  readonly videoCapturer: GumVideoCapturer;
+  private readonly videoCapturer: GumVideoCapturer;
 
   readonly videoRenderer: CanvasVideoRenderer;
+
+  private localPreviewContainer: HTMLDivElement | null = null;
+
+  private localPreview: HTMLVideoElement | undefined;
 
   private reduxInterface?: CallingReduxInterface;
 
@@ -396,6 +383,7 @@ export class CallingClass {
 
     RingRTC.setConfig({
       field_trials: undefined,
+      use_ringrtc_adm: getUseRingrtcAdm(),
     });
 
     RingRTC.handleOutgoingSignaling = this.handleOutgoingSignaling.bind(this);
@@ -418,7 +406,7 @@ export class CallingClass {
     });
 
     ipcRenderer.on('stop-screen-share', () => {
-      reduxInterface.setPresenting();
+      reduxInterface.cancelPresenting();
     });
     ipcRenderer.on(
       'calling:set-rtc-stats-interval',
@@ -659,7 +647,8 @@ export class CallingClass {
       credentialPresentation,
       rootKey,
       adminKey,
-      serializedPublicParams
+      serializedPublicParams,
+      CallLinkRestrictions.AdminApproval
     );
 
     if (!result.success) {
@@ -671,12 +660,50 @@ export class CallingClass {
     log.info(`${logId}: success`);
     const state = callLinkStateFromRingRTC(result.value);
 
-    return {
+    const callLink: CallLinkType = {
       roomId: roomIdHex,
       rootKey: rootKey.toString(),
       adminKey: adminKey.toString('base64'),
+      storageNeedsSync: true,
       ...state,
     };
+
+    drop(sendCallLinkUpdateSync(callLink));
+
+    return callLink;
+  }
+
+  async deleteCallLink(callLink: CallLinkType): Promise<void> {
+    strictAssert(
+      this._sfuUrl,
+      'createCallLink() missing SFU URL; not deleting call link'
+    );
+
+    const sfuUrl = this._sfuUrl;
+    const logId = `deleteCallLink(${callLink.roomId})`;
+
+    const callLinkRootKey = CallLinkRootKey.parse(callLink.rootKey);
+    strictAssert(callLink.adminKey, 'Missing admin key');
+    const callLinkAdminKey = toAdminKeyBytes(callLink.adminKey);
+    const authCredentialPresentation =
+      await getCallLinkAuthCredentialPresentation(callLinkRootKey);
+
+    const result = await RingRTC.deleteCallLink(
+      sfuUrl,
+      authCredentialPresentation.serialize(),
+      callLinkRootKey,
+      callLinkAdminKey
+    );
+
+    if (!result.success) {
+      if (result.errorStatusCode === 404) {
+        log.info(`${logId}: Call link not found, already deleted`);
+        return;
+      }
+      const message = `Failed to delete call link: ${result.errorStatusCode}`;
+      log.error(`${logId}: ${message}`);
+      throw new Error(message);
+    }
   }
 
   async updateCallLinkName(
@@ -710,6 +737,8 @@ export class CallingClass {
       log.error(`${logId}: ${message}`);
       throw new Error(message);
     }
+
+    drop(sendCallLinkUpdateSync(callLink));
 
     log.info(`${logId}: success`);
     return callLinkStateFromRingRTC(result.value);
@@ -754,24 +783,15 @@ export class CallingClass {
       throw new Error(message);
     }
 
+    drop(sendCallLinkUpdateSync(callLink));
+
     log.info(`${logId}: success`);
     return callLinkStateFromRingRTC(result.value);
   }
 
-  async readCallLink({
-    callLinkRootKey,
-  }: Readonly<{
-    callLinkRootKey: CallLinkRootKey;
-  }>): Promise<
-    | {
-        callLinkState: ReadCallLinkState;
-        errorStatusCode: undefined;
-      }
-    | {
-        callLinkState: undefined;
-        errorStatusCode: number;
-      }
-  > {
+  async readCallLink(
+    callLinkRootKey: CallLinkRootKey
+  ): Promise<CallLinkStateType | null> {
     if (!this._sfuUrl) {
       throw new Error('readCallLink() missing SFU URL; not handling call link');
     }
@@ -787,18 +807,15 @@ export class CallingClass {
       callLinkRootKey
     );
     if (!result.success) {
-      log.warn(`${logId}: failed`);
-      return {
-        callLinkState: undefined,
-        errorStatusCode: result.errorStatusCode,
-      };
+      log.warn(`${logId}: failed with status ${result.errorStatusCode}`);
+      if (result.errorStatusCode === 404) {
+        return null;
+      }
+      throw new Error(`Failed to read call link: ${result.errorStatusCode}`);
     }
 
     log.info(`${logId}: success`);
-    return {
-      callLinkState: this.formatCallLinkStateForRedux(result.value),
-      errorStatusCode: undefined,
-    };
+    return callLinkStateFromRingRTC(result.value);
   }
 
   async startCallLinkLobby({
@@ -854,49 +871,63 @@ export class CallingClass {
     hasLocalAudio: boolean,
     hasLocalVideo: boolean
   ): Promise<void> {
-    log.info('CallingClass.startOutgoingDirectCall()');
-
-    if (!this.reduxInterface) {
-      throw new Error('Redux actions not available');
-    }
-
     const conversation = window.ConversationController.get(conversationId);
     if (!conversation) {
-      log.error('Could not find conversation, cannot start call');
+      log.error(
+        `startOutgoingCall: Could not find conversation ${conversationId}, cannot start call`
+      );
       this.stopCallingLobby();
       return;
     }
 
+    const idForLogging = getConversationIdForLogging(conversation.attributes);
+    const logId = `startOutgoingDirectCall(${idForLogging}`;
+    log.info(logId);
+
+    if (!this.reduxInterface) {
+      throw new Error(`${logId}: Redux actions not available`);
+    }
+
     const remoteUserId = this.getRemoteUserIdFromConversation(conversation);
     if (!remoteUserId || !this.localDeviceId) {
-      log.error('Missing identifier, new call not allowed.');
+      log.error(`${logId}: Missing identifier, new call not allowed.`);
       this.stopCallingLobby();
       return;
     }
 
     const haveMediaPermissions = await this.requestPermissions(hasLocalVideo);
     if (!haveMediaPermissions) {
-      log.info('Permissions were denied, new call not allowed.');
+      log.info(`${logId}: Permissions were denied, new call not allowed.`);
       this.stopCallingLobby();
       return;
     }
 
-    log.info('CallingClass.startOutgoingDirectCall(): Getting call settings');
-
+    log.info(`${logId}: Getting call settings`);
     // Check state after awaiting to debounce call button.
     if (RingRTC.call && RingRTC.call.state !== CallState.Ended) {
-      log.info('Call already in progress, new call not allowed.');
+      log.info(`${logId}: Call already in progress, new call not allowed.`);
       this.stopCallingLobby();
       return;
     }
 
-    log.info('CallingClass.startOutgoingDirectCall(): Starting in RingRTC');
-
+    log.info(`${logId}: Starting in RingRTC`);
     const call = RingRTC.startOutgoingCall(
       remoteUserId,
       hasLocalVideo,
       this.localDeviceId
     );
+
+    // Send profile key to conversation recipient since call protos don't include it
+    if (!conversation.get('profileSharing')) {
+      log.info(`${logId}: Setting profileSharing=true`);
+      conversation.set({ profileSharing: true });
+      await DataWriter.updateConversation(conversation.attributes);
+    }
+    log.info(`${logId}: Sending profile key`);
+    await conversationJobQueue.add({
+      conversationId: conversation.id,
+      type: 'ProfileKeyForCall',
+    });
 
     RingRTC.setOutgoingAudio(call.callId, hasLocalAudio);
     RingRTC.setVideoCapturer(call.callId, this.videoCapturer);
@@ -932,8 +963,23 @@ export class CallingClass {
     );
   }
 
+  public setLocalPreviewContainer(container: HTMLDivElement | null): void {
+    // Reuse HTMLVideoElement between different containers so that the preview
+    // of the last frame stays valid even if there are no new frames on the
+    // underlying MediaStream.
+    if (this.localPreview == null) {
+      this.localPreview = document.createElement('video');
+      this.localPreview.autoplay = true;
+      this.videoCapturer.setLocalPreview({ current: this.localPreview });
+    }
+
+    this.localPreviewContainer?.removeChild(this.localPreview);
+    this.localPreviewContainer = container;
+    this.localPreviewContainer?.appendChild(this.localPreview);
+  }
+
   public async cleanupStaleRingingCalls(): Promise<void> {
-    const calls = await dataInterface.getRecentStaleRingsAndMarkOlderMissed();
+    const calls = await DataWriter.getRecentStaleRingsAndMarkOlderMissed();
 
     const results = await Promise.all(
       calls.map(async call => {
@@ -950,7 +996,7 @@ export class CallingClass {
         return result.callId;
       });
 
-    await dataInterface.markCallHistoryMissed(staleCallIds);
+    await DataWriter.markCallHistoryMissed(staleCallIds);
   }
 
   public async peekGroupCall(conversationId: string): Promise<PeekInfo> {
@@ -1188,21 +1234,25 @@ export class CallingClass {
       return;
     }
 
+    const logId = `joinGroupCall(${getConversationIdForLogging(conversation)})`;
+    log.info(logId);
+
     if (
       !conversation.groupId ||
       !conversation.publicParams ||
       !conversation.secretParams
     ) {
       log.error(
-        'Conversation is missing required parameters. Cannot join group call'
+        `${logId}: Conversation is missing required parameters. Cannot join group call`
       );
       return;
     }
 
-    const logId = `joinGroupCall(${getConversationIdForLogging(conversation)})`;
     const haveMediaPermissions = await this.requestPermissions(hasLocalVideo);
     if (!haveMediaPermissions) {
-      log.info('Permissions were denied, but allow joining group call');
+      log.info(
+        `${logId}: Permissions were denied, but allow joining group call`
+      );
     }
 
     await this.startDeviceReselectionTimer();
@@ -1221,6 +1271,7 @@ export class CallingClass {
       groupCall.ringAll();
     }
 
+    log.info(`${logId}: Joining in RingRTC`);
     groupCall.join();
   }
 
@@ -1493,7 +1544,7 @@ export class CallingClass {
       log.info(`${logId}: Sending profile key`);
       drop(
         conversationJobQueue.add({
-          type: conversationQueueJobEnum.enum.ProfileKey,
+          type: conversationQueueJobEnum.enum.ProfileKeyForCall,
           conversationId: conversation.id,
           isOneTimeSend: true,
         })
@@ -1515,9 +1566,14 @@ export class CallingClass {
     hasLocalAudio: boolean;
     hasLocalVideo: boolean;
   }): Promise<void> {
+    const logId = `joinCallLinkCall(${roomId})`;
+    log.info(logId);
+
     const haveMediaPermissions = await this.requestPermissions(hasLocalVideo);
     if (!haveMediaPermissions) {
-      log.info('Permissions were denied, but allow joining call link call');
+      log.info(
+        `${logId}: Permissions were denied, but allow joining call link call`
+      );
     }
 
     await this.startDeviceReselectionTimer();
@@ -1539,6 +1595,7 @@ export class CallingClass {
     groupCall.setOutgoingVideoMuted(!hasLocalVideo);
     drop(this.enableCaptureAndSend(groupCall));
 
+    log.info(`${logId}: Joining in RingRTC`);
     groupCall.join();
   }
 
@@ -1742,18 +1799,6 @@ export class CallingClass {
             (remoteDeviceState.videoMuted ? 1 : 4 / 3),
         };
       }),
-    };
-  }
-
-  public formatCallLinkStateForRedux(
-    callLinkState: RingRTCCallLinkState
-  ): ReadCallLinkState {
-    const { name, restrictions, expiration, revoked } = callLinkState;
-    return {
-      name,
-      restrictions,
-      expiration: expiration.getTime(),
-      revoked,
     };
   }
 
@@ -2006,50 +2051,13 @@ export class CallingClass {
     }
   }
 
-  async getPresentingSources(): Promise<Array<PresentableSource>> {
-    // There's a Linux Wayland Electron bug where requesting desktopCapturer.
-    // getSources() with types as ['screen', 'window'] (the default) pops 2
-    // OS permissions dialogs in an unusable state (Dialog 1 for Share Window
-    // is the foreground and ignores input; Dialog 2 for Share Screen is background
-    // and requires input. As a workaround, request both sources sequentially.
-    // https://github.com/signalapp/Signal-Desktop/issues/5350#issuecomment-1688614149
-    const sources: ReadonlyArray<DesktopCapturerSource> =
-      OS.isLinux() && OS.isWaylandEnabled()
-        ? (
-            await ipcRenderer.invoke('getScreenCaptureSources', ['screen'])
-          ).concat(
-            await ipcRenderer.invoke('getScreenCaptureSources', ['window'])
-          )
-        : await ipcRenderer.invoke('getScreenCaptureSources');
-
-    const presentableSources: Array<PresentableSource> = [];
-
-    sources.forEach(source => {
-      // If electron can't retrieve a thumbnail then it won't be able to
-      // present this source so we filter these out.
-      if (source.thumbnail.isEmpty()) {
-        return;
-      }
-      presentableSources.push({
-        appIcon:
-          source.appIcon && !source.appIcon.isEmpty()
-            ? source.appIcon.toDataURL()
-            : undefined,
-        id: source.id,
-        name: translateSourceName(window.i18n, source),
-        isScreen: isScreenSource(source),
-        thumbnail: source.thumbnail.toDataURL(),
-      });
-    });
-
-    return presentableSources;
-  }
-
-  async setPresenting(
-    conversationId: string,
-    hasLocalVideo: boolean,
-    source?: PresentedSource
-  ): Promise<void> {
+  async setPresenting({
+    conversationId,
+    hasLocalVideo,
+    mediaStream,
+    source,
+    callLinkRootKey,
+  }: SetPresentingOptionsType): Promise<void> {
     const call = getOwn(this.callsLookup, conversationId);
     if (!call) {
       log.warn('Trying to set presenting for a non-existent call');
@@ -2057,15 +2065,18 @@ export class CallingClass {
     }
 
     this.videoCapturer.disable();
-    if (source) {
+    const isPresenting = mediaStream != null;
+    if (isPresenting) {
       this.hadLocalVideoBeforePresenting = hasLocalVideo;
       drop(
         this.enableCaptureAndSend(call, {
-          // 15fps is much nicer but takes up a lot more CPU.
-          maxFramerate: 5,
-          maxHeight: 1800,
-          maxWidth: 2880,
-          screenShareSourceId: source.id,
+          maxFramerate: REQUESTED_SCREEN_SHARE_FRAMERATE,
+          maxHeight: REQUESTED_SCREEN_SHARE_HEIGHT,
+          maxWidth: REQUESTED_SCREEN_SHARE_WIDTH,
+          mediaStream,
+          onEnded: () => {
+            this.reduxInterface?.cancelPresenting();
+          },
         })
       );
       this.setOutgoingVideo(conversationId, true);
@@ -2077,24 +2088,38 @@ export class CallingClass {
       this.hadLocalVideoBeforePresenting = undefined;
     }
 
-    const isPresenting = Boolean(source);
     this.setOutgoingVideoIsScreenShare(call, isPresenting);
 
-    if (source) {
-      ipcRenderer.send('show-screen-share', source.name);
+    if (isPresenting) {
+      ipcRenderer.send('show-screen-share', source?.name);
 
-      // TODO: DESKTOP-7068
+      let url: string;
+      let absolutePath: string | undefined;
+
       if (
         call instanceof GroupCall &&
         call.getKind() === GroupCallKind.CallLink
       ) {
-        return;
+        strictAssert(callLinkRootKey, 'If call is adhoc, we need rootKey');
+        const color = getColorForCallLink(callLinkRootKey);
+        const saveToDisk = shouldSaveNotificationAvatarToDisk();
+        const result = await createIdenticon(
+          color,
+          { type: 'call-link' },
+          { saveToDisk }
+        );
+        url = result.url;
+        absolutePath = result.path
+          ? window.Signal.Migrations.getAbsoluteTempPath(result.path)
+          : undefined;
+      } else {
+        const conversation = window.ConversationController.get(conversationId);
+        strictAssert(conversation, 'setPresenting: conversation not found');
+
+        const result = await conversation.getAvatarOrIdenticon();
+        url = result.url;
+        absolutePath = result.absolutePath;
       }
-
-      const conversation = window.ConversationController.get(conversationId);
-      strictAssert(conversation, 'setPresenting: conversation not found');
-
-      const { url, absolutePath } = await conversation.getAvatarOrIdenticon();
 
       notificationService.notify({
         conversationId,
@@ -2312,20 +2337,26 @@ export class CallingClass {
       await this.getAvailableIODevices();
 
     const preferredMicrophone = window.Events.getPreferredAudioInputDevice();
-    const selectedMicIndex = findBestMatchingAudioDeviceIndex({
-      available: availableMicrophones,
-      preferred: preferredMicrophone,
-    });
+    const selectedMicIndex = findBestMatchingAudioDeviceIndex(
+      {
+        available: availableMicrophones,
+        preferred: preferredMicrophone,
+      },
+      OS.isWindows()
+    );
     const selectedMicrophone =
       selectedMicIndex !== undefined
         ? availableMicrophones[selectedMicIndex]
         : undefined;
 
     const preferredSpeaker = window.Events.getPreferredAudioOutputDevice();
-    const selectedSpeakerIndex = findBestMatchingAudioDeviceIndex({
-      available: availableSpeakers,
-      preferred: preferredSpeaker,
-    });
+    const selectedSpeakerIndex = findBestMatchingAudioDeviceIndex(
+      {
+        available: availableSpeakers,
+        preferred: preferredSpeaker,
+      },
+      OS.isWindows()
+    );
     const selectedSpeaker =
       selectedSpeakerIndex !== undefined
         ? availableSpeakers[selectedSpeakerIndex]
@@ -2651,6 +2682,7 @@ export class CallingClass {
         urgent,
         isPartialSend,
         recipients,
+        groupId,
       });
 
       log.info('handleSendCallMessageToGroup() completed successfully');
@@ -2760,7 +2792,7 @@ export class CallingClass {
       const callId = getCallIdFromRing(ringId);
       const callDetails = getCallDetailsFromGroupCallMeta(groupId, {
         callId,
-        ringerId: ringerUuid,
+        ringerId: ringerAci,
       });
       let localEventForCall;
       if (localEventFromRing === LocalCallEvent.Missed) {
@@ -2971,6 +3003,11 @@ export class CallingClass {
     };
 
     // eslint-disable-next-line no-param-reassign
+    call.handleRemoteAudioEnabled = () => {
+      // TODO: Implement handling for the remote audio state using call.remoteAudioEnabled
+    };
+
+    // eslint-disable-next-line no-param-reassign
     call.handleRemoteVideoEnabled = () => {
       reduxInterface.remoteVideoChange({
         conversationId: conversation.id,
@@ -3111,20 +3148,32 @@ export class CallingClass {
     function iceServerConfigToList(
       iceServerConfig: GetIceServersResultType
     ): Array<IceServer> {
-      return [
-        {
-          hostname: iceServerConfig.hostname ?? '',
-          username: iceServerConfig.username,
-          password: iceServerConfig.password,
-          urls: (iceServerConfig.urlsWithIps ?? []).slice(),
-        },
-        {
-          hostname: '',
-          username: iceServerConfig.username,
-          password: iceServerConfig.password,
-          urls: (iceServerConfig.urls ?? []).slice(),
-        },
-      ];
+      function mapConfig(
+        iceServerGroup: GetIceServersResultType | IceServerGroupType
+      ): Array<IceServer> {
+        if (!iceServerGroup.username || !iceServerGroup.password) {
+          return [];
+        }
+
+        return [
+          {
+            hostname: iceServerGroup.hostname ?? '',
+            username: iceServerGroup.username,
+            password: iceServerGroup.password,
+            urls: (iceServerGroup.urlsWithIps ?? []).slice(),
+          },
+          {
+            hostname: '',
+            username: iceServerGroup.username,
+            password: iceServerGroup.password,
+            urls: (iceServerGroup.urls ?? []).slice(),
+          },
+        ];
+      }
+
+      return [iceServerConfig]
+        .concat(iceServerConfig.iceServers ?? [])
+        .flatMap(mapConfig);
     }
 
     if (!window.textsecure.messaging) {
@@ -3281,11 +3330,10 @@ export class CallingClass {
       return;
     }
 
-    const prevMessageId =
-      await window.Signal.Data.getCallHistoryMessageByCallId({
-        conversationId: conversation.id,
-        callId: groupCallMeta.callId,
-      });
+    const prevMessageId = await DataReader.getCallHistoryMessageByCallId({
+      conversationId: conversation.id,
+      callId: groupCallMeta.callId,
+    });
 
     const isNewCall = prevMessageId == null;
 
@@ -3387,9 +3435,8 @@ export class CallingClass {
   // https://bugs.chromium.org/p/chromium/issues/detail?id=1287628
   private async enumerateMediaDevices(): Promise<void> {
     try {
-      const microphoneStatus = await window.IPC.getMediaAccessStatus(
-        'microphone'
-      );
+      const microphoneStatus =
+        await window.IPC.getMediaAccessStatus('microphone');
       if (microphoneStatus !== 'granted') {
         return;
       }

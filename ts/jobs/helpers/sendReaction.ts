@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { isNumber } from 'lodash';
-import { v4 as generateUuid } from 'uuid';
 
 import * as Errors from '../../types/errors';
 import { strictAssert } from '../../util/assert';
@@ -11,6 +10,7 @@ import type { CallbackResultType } from '../../textsecure/Types.d';
 import type { MessageModel } from '../../models/messages';
 import type { MessageReactionType } from '../../model-types.d';
 import type { ConversationModel } from '../../models/conversations';
+import { DataWriter } from '../../sql/Client';
 
 import * as reactionUtil from '../../reactions/util';
 import { isSent, SendStatus } from '../../messages/MessageSendState';
@@ -31,6 +31,7 @@ import type { AciString, ServiceIdString } from '../../types/ServiceId';
 import { isAciString } from '../../util/isAciString';
 import { handleMultipleSendErrors } from './handleMultipleSendErrors';
 import { incrementMessageCounter } from '../../util/incrementMessageCounter';
+import { generateMessageId } from '../../util/generateMessageId';
 
 import type {
   ConversationQueueJobBundle,
@@ -86,7 +87,7 @@ export async function sendReaction(
   if (!canReact(message.attributes, ourConversationId, findAndFormatContact)) {
     log.info(`could not react to ${messageId}. Removing this pending reaction`);
     markReactionFailed(message, pendingReaction);
-    await window.Signal.Data.saveMessage(message.attributes, { ourAci });
+    await DataWriter.saveMessage(message.attributes, { ourAci });
     return;
   }
 
@@ -95,7 +96,7 @@ export async function sendReaction(
       `reacting to message ${messageId} ran out of time. Giving up on sending it`
     );
     markReactionFailed(message, pendingReaction);
-    await window.Signal.Data.saveMessage(message.attributes, { ourAci });
+    await DataWriter.saveMessage(message.attributes, { ourAci });
     return;
   }
 
@@ -158,11 +159,10 @@ export async function sendReaction(
       remove: !emoji,
     };
     const ephemeralMessageForReactionSend = new window.Whisper.Message({
-      id: generateUuid(),
+      ...generateMessageId(incrementMessageCounter()),
       type: 'outgoing',
       conversationId: conversation.get('id'),
       sent_at: pendingReaction.timestamp,
-      received_at: incrementMessageCounter(),
       received_at_ms: pendingReaction.timestamp,
       timestamp: pendingReaction.timestamp,
       sendStateByConversationId: zipObject(
@@ -189,6 +189,7 @@ export async function sendReaction(
       const dataMessage = await messaging.getDataOrEditMessage({
         attachments: [],
         expireTimer,
+        expireTimerVersion: conversation.getExpireTimerVersion(),
         groupV2: conversation.getGroupV2Info({
           members: recipientServiceIdsWithoutMe,
         }),
@@ -246,6 +247,7 @@ export async function sendReaction(
           deletedForEveryoneTimestamp: undefined,
           timestamp: pendingReaction.timestamp,
           expireTimer,
+          expireTimerVersion: conversation.getExpireTimerVersion(),
           contentHint: ContentHint.RESENDABLE,
           groupId: undefined,
           profileKey,
@@ -335,18 +337,17 @@ export async function sendReaction(
         await reactionMessage.hydrateStoryContext(message.attributes, {
           shouldSave: false,
         });
-        await window.Signal.Data.saveMessage(reactionMessage.attributes, {
+        await DataWriter.saveMessage(reactionMessage.attributes, {
           ourAci,
           forceSave: true,
         });
 
-        void conversation.addSingleMessage(
-          window.MessageCache.__DEPRECATED$register(
-            reactionMessage.id,
-            reactionMessage,
-            'sendReaction'
-          )
+        window.MessageCache.__DEPRECATED$register(
+          reactionMessage.id,
+          reactionMessage,
+          'sendReaction'
         );
+        void conversation.addSingleMessage(reactionMessage.attributes);
       }
     }
 
@@ -374,7 +375,7 @@ export async function sendReaction(
       toThrow: originalError || thrownError,
     });
   } finally {
-    await window.Signal.Data.saveMessage(message.attributes, { ourAci });
+    await DataWriter.saveMessage(message.attributes, { ourAci });
   }
 }
 

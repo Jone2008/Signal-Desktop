@@ -16,6 +16,7 @@ import getDirection from 'direction';
 import { drop, groupBy, noop, orderBy, take, unescape } from 'lodash';
 import { Manager, Popper, Reference } from 'react-popper';
 import type { PreventOverflowModifier } from '@popperjs/core/lib/modifiers/preventOverflow';
+import type { ReadonlyDeep } from 'type-fest';
 
 import type {
   ConversationType,
@@ -23,6 +24,7 @@ import type {
   InteractionModeType,
   PushPanelForConversationActionType,
   SaveAttachmentActionCreatorType,
+  SaveAttachmentsActionCreatorType,
   ShowConversationType,
 } from '../../state/ducks/conversations';
 import type { ViewStoryActionCreatorType } from '../../state/ducks/stories';
@@ -96,10 +98,9 @@ import { PanelType } from '../../types/Panels';
 import { openLinkInWebBrowser } from '../../util/openLinkInWebBrowser';
 import { RenderLocation } from './MessageTextRenderer';
 import { UserText } from '../UserText';
-import {
-  getColorForCallLink,
-  getKeyFromCallLink,
-} from '../../util/getColorForCallLink';
+import { getColorForCallLink } from '../../util/getColorForCallLink';
+import { getKeyFromCallLink } from '../../util/callLinks';
+import { InAnotherCallTooltip } from './InAnotherCallTooltip';
 
 const GUESS_METADATA_WIDTH_TIMESTAMP_SIZE = 16;
 const GUESS_METADATA_WIDTH_EXPIRE_TIMER_SIZE = 18;
@@ -162,10 +163,10 @@ export const MessageStatuses = [
   'sent',
   'viewed',
 ] as const;
-export type MessageStatusType = typeof MessageStatuses[number];
+export type MessageStatusType = (typeof MessageStatuses)[number];
 
 export const Directions = ['incoming', 'outgoing'] as const;
-export type DirectionType = typeof Directions[number];
+export type DirectionType = (typeof Directions)[number];
 
 export type AudioAttachmentProps = {
   renderingContext: string;
@@ -196,14 +197,22 @@ export enum GiftBadgeStates {
   Unopened = 'Unopened',
   Opened = 'Opened',
   Redeemed = 'Redeemed',
+  Failed = 'Failed',
 }
 
-export type GiftBadgeType = {
-  expiration: number;
-  id: string | undefined;
-  level: number;
-  state: GiftBadgeStates;
-};
+export type GiftBadgeType =
+  | {
+      state:
+        | GiftBadgeStates.Unopened
+        | GiftBadgeStates.Opened
+        | GiftBadgeStates.Redeemed;
+      expiration: number;
+      id: string | undefined;
+      level: number;
+    }
+  | {
+      state: GiftBadgeStates.Failed;
+    };
 
 export type PropsData = {
   id: string;
@@ -214,6 +223,7 @@ export type PropsData = {
   customColor?: CustomColorType;
   conversationId: string;
   displayLimit?: number;
+  activeCallConversationId?: string;
   text?: string;
   textDirection: TextDirection;
   textAttachment?: AttachmentType;
@@ -229,7 +239,7 @@ export type PropsData = {
   timestamp: number;
   receivedAtMS?: number;
   status?: MessageStatusType;
-  contact?: EmbeddedContactType;
+  contact?: ReadonlyDeep<EmbeddedContactType>;
   author: Pick<
     ConversationType,
     | 'acceptedMessageRequest'
@@ -343,6 +353,7 @@ export type PropsActions = {
     messageId: string;
   }) => void;
   saveAttachment: SaveAttachmentActionCreatorType;
+  saveAttachments: SaveAttachmentsActionCreatorType;
   showLightbox: (options: {
     attachment: AttachmentType;
     messageId: string;
@@ -357,6 +368,7 @@ export type PropsActions = {
   targetMessage?: (messageId: string, conversationId: string) => unknown;
 
   showEditHistoryModal?: (id: string) => unknown;
+  showAttachmentDownloadStillInProgressToast: (count: number) => unknown;
   showExpiredIncomingTapToViewToast: () => unknown;
   showExpiredOutgoingTapToViewToast: () => unknown;
   viewStory: ViewStoryActionCreatorType;
@@ -1078,9 +1090,6 @@ export class Message extends React.PureComponent<Props, State> {
             : null,
           withContentAbove
             ? 'module-message__generic-attachment--with-content-above'
-            : null,
-          !firstAttachment.url
-            ? 'module-message__generic-attachment--not-active'
             : null
         )}
         // There's only ever one of these, so we don't want users to tab into it
@@ -1179,6 +1188,16 @@ export class Message extends React.PureComponent<Props, State> {
     const isFullSizeImage = shouldUseFullSizeLinkPreviewImage(first);
 
     const linkPreviewDate = first.date || null;
+    const title =
+      first.title ||
+      (first.isCallLink
+        ? i18n('icu:calling__call-link-default-title')
+        : undefined);
+    const description =
+      first.description ||
+      (first.isCallLink
+        ? i18n('icu:message--call-link-description')
+        : undefined);
 
     const isClickable = this.areLinksEnabled();
 
@@ -1257,9 +1276,7 @@ export class Message extends React.PureComponent<Props, State> {
                 isMe={false}
                 sharedGroupNames={[]}
                 size={64}
-                title={
-                  first.title ?? i18n('icu:calling__call-link-default-title')
-                }
+                title={title ?? i18n('icu:calling__call-link-default-title')}
               />
             </div>
           )}
@@ -1271,12 +1288,10 @@ export class Message extends React.PureComponent<Props, State> {
                 : null
             )}
           >
-            <div className="module-message__link-preview__title">
-              {first.title}
-            </div>
-            {first.description && (
+            <div className="module-message__link-preview__title">{title}</div>
+            {description && (
               <div className="module-message__link-preview__description">
-                {unescape(first.description)}
+                {unescape(description)}
               </div>
             )}
             <div className="module-message__link-preview__footer">
@@ -1384,7 +1399,10 @@ export class Message extends React.PureComponent<Props, State> {
       return null;
     }
 
-    if (giftBadge.state === GiftBadgeStates.Unopened) {
+    if (
+      giftBadge.state === GiftBadgeStates.Unopened ||
+      giftBadge.state === GiftBadgeStates.Failed
+    ) {
       const description =
         direction === 'incoming'
           ? i18n('icu:message--donation--unopened--incoming')
@@ -1948,6 +1966,9 @@ export class Message extends React.PureComponent<Props, State> {
             if (!textAttachment) {
               return;
             }
+            if (isDownloaded(textAttachment)) {
+              return;
+            }
             kickOffAttachmentDownload({
               attachment: textAttachment,
               messageId: id,
@@ -1979,22 +2000,37 @@ export class Message extends React.PureComponent<Props, State> {
   }
 
   private renderAction(): JSX.Element | null {
-    const { direction, i18n, previews } = this.props;
+    const { direction, activeCallConversationId, i18n, previews } = this.props;
 
     if (this.shouldShowJoinButton()) {
       const firstPreview = previews[0];
+      const inAnotherCall = Boolean(
+        activeCallConversationId &&
+          (!firstPreview.callLinkRoomId ||
+            activeCallConversationId !== firstPreview.callLinkRoomId)
+      );
 
-      return (
+      const joinButton = (
         <button
           type="button"
           className={classNames('module-message__action', {
             'module-message__action--incoming': direction === 'incoming',
             'module-message__action--outgoing': direction === 'outgoing',
+            'module-message__action--incoming--in-another-call':
+              direction === 'incoming' && inAnotherCall,
+            'module-message__action--outgoing--in-another-call':
+              direction === 'outgoing' && inAnotherCall,
           })}
           onClick={() => openLinkInWebBrowser(firstPreview?.url)}
         >
           {i18n('icu:calling__join')}
         </button>
+      );
+
+      return inAnotherCall ? (
+        <InAnotherCallTooltip i18n={i18n}>{joinButton}</InAnotherCallTooltip>
+      ) : (
+        joinButton
       );
     }
 

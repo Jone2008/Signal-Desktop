@@ -15,39 +15,36 @@ import type {
   WebAPIType,
 } from './WebAPI';
 import type {
-  CompatSignedPreKeyType,
   CompatPreKeyType,
+  CompatSignedPreKeyType,
   KeyPairType,
   KyberPreKeyType,
   PniKeyMaterialType,
 } from './Types.d';
-import ProvisioningCipher from './ProvisioningCipher';
-import type { IncomingWebSocketRequest } from './WebsocketResources';
 import createTaskWithTimeout from './TaskWithTimeout';
 import * as Bytes from '../Bytes';
 import * as Errors from '../types/errors';
 import { senderCertificateService } from '../services/senderCertificate';
 import { backupsService } from '../services/backups';
 import {
+  decryptDeviceName,
   deriveAccessKey,
+  deriveStorageServiceKey,
+  encryptDeviceName,
   generateRegistrationId,
   getRandomBytes,
-  decryptDeviceName,
-  encryptDeviceName,
-  deriveStorageServiceKey,
 } from '../Crypto';
 import {
   generateKeyPair,
-  generateSignedPreKey,
-  generatePreKey,
   generateKyberPreKey,
+  generatePreKey,
+  generateSignedPreKey,
 } from '../Curve';
-import type { ServiceIdString, AciString, PniString } from '../types/ServiceId';
+import type { AciString, PniString, ServiceIdString } from '../types/ServiceId';
 import {
-  ServiceIdKind,
-  normalizePni,
-  toTaggedPni,
   isUntaggedPniString,
+  ServiceIdKind,
+  toTaggedPni,
 } from '../types/ServiceId';
 import { normalizeAci } from '../util/normalizeAci';
 import { drop } from '../util/drop';
@@ -60,7 +57,9 @@ import { missingCaseError } from '../util/missingCaseError';
 import { SignalService as Proto } from '../protobuf';
 import * as log from '../logging/log';
 import type { StorageAccessType } from '../types/Storage';
-import { linkDeviceRoute } from '../util/signalRoutes';
+import { getRelativePath, createName } from '../util/attachmentPath';
+import { isBackupEnabled } from '../util/isBackupEnabled';
+import { getMessageQueueTime } from '../util/getMessageQueueTime';
 
 type StorageKeyByServiceIdKind = {
   [kind in ServiceIdKind]: keyof StorageAccessType;
@@ -79,7 +78,6 @@ export const KYBER_KEY_ID_KEY: StorageKeyByServiceIdKind = {
   [ServiceIdKind.PNI]: 'maxKyberPreKeyIdPNI',
 };
 
-const LAST_RESORT_KEY_ARCHIVE_AGE = 30 * DAY;
 const LAST_RESORT_KEY_ROTATION_AGE = DAY * 1.5;
 const LAST_RESORT_KEY_MINIMUM = 5;
 const LAST_RESORT_KEY_UPDATE_TIME_KEY: StorageKeyByServiceIdKind = {
@@ -98,7 +96,6 @@ const PRE_KEY_ID_KEY: StorageKeyByServiceIdKind = {
 };
 const PRE_KEY_MINIMUM = 10;
 
-const SIGNED_PRE_KEY_ARCHIVE_AGE = 30 * DAY;
 export const SIGNED_PRE_KEY_ID_KEY: StorageKeyByServiceIdKind = {
   [ServiceIdKind.ACI]: 'signedKeyId',
   [ServiceIdKind.Unknown]: 'signedKeyId',
@@ -113,7 +110,7 @@ const SIGNED_PRE_KEY_UPDATE_TIME_KEY: StorageKeyByServiceIdKind = {
   [ServiceIdKind.PNI]: 'signedKeyUpdateTimePNI',
 };
 
-enum AccountType {
+export enum AccountType {
   Primary = 'Primary',
   Linked = 'Linked',
 }
@@ -125,6 +122,8 @@ type CreateAccountSharedOptionsType = Readonly<{
   pniKeyPair: KeyPairType;
   profileKey: Uint8Array;
   masterKey: Uint8Array;
+
+  // Test-only
   backupFile?: Uint8Array;
 }>;
 
@@ -135,6 +134,7 @@ type CreatePrimaryDeviceOptionsType = Readonly<{
   ourAci?: undefined;
   ourPni?: undefined;
   userAgent?: undefined;
+  ephemeralBackupKey?: undefined;
 
   readReceipts: true;
 
@@ -143,13 +143,14 @@ type CreatePrimaryDeviceOptionsType = Readonly<{
 }> &
   CreateAccountSharedOptionsType;
 
-type CreateLinkedDeviceOptionsType = Readonly<{
+export type CreateLinkedDeviceOptionsType = Readonly<{
   type: AccountType.Linked;
 
   deviceName: string;
   ourAci: AciString;
   ourPni: PniString;
   userAgent?: string;
+  ephemeralBackupKey: Uint8Array | undefined;
 
   readReceipts: boolean;
 
@@ -324,148 +325,27 @@ export default class AccountManager extends EventTarget {
       const accessKey = deriveAccessKey(profileKey);
       const masterKey = getRandomBytes(MASTER_KEY_LENGTH);
 
-      const registrationBaton = this.server.startRegistration();
-      try {
-        await this.createAccount({
-          type: AccountType.Primary,
-          number,
-          verificationCode,
-          sessionId,
-          aciKeyPair,
-          pniKeyPair,
-          profileKey,
-          accessKey,
-          masterKey,
-          readReceipts: true,
-        });
-      } finally {
-        this.server.finishRegistration(registrationBaton);
-      }
-      await this.registrationDone();
+      await this.createAccount({
+        type: AccountType.Primary,
+        number,
+        verificationCode,
+        sessionId,
+        aciKeyPair,
+        pniKeyPair,
+        profileKey,
+        accessKey,
+        masterKey,
+        ephemeralBackupKey: undefined,
+        readReceipts: true,
+      });
     });
   }
 
   async registerSecondDevice(
-    setProvisioningUrl: (url: string) => void,
-    confirmNumber: (number?: string) => Promise<ConfirmNumberResultType>
+    options: CreateLinkedDeviceOptionsType
   ): Promise<void> {
-    const provisioningCipher = new ProvisioningCipher();
-    const pubKey = await provisioningCipher.getPublicKey();
-
-    let envelopeCallbacks:
-      | {
-          resolve(data: Proto.ProvisionEnvelope): void;
-          reject(error: Error): void;
-        }
-      | undefined;
-    const envelopePromise = new Promise<Proto.ProvisionEnvelope>(
-      (resolve, reject) => {
-        envelopeCallbacks = { resolve, reject };
-      }
-    );
-
-    const wsr = await this.server.getProvisioningResource({
-      handleRequest(request: IncomingWebSocketRequest) {
-        if (
-          request.path === '/v1/address' &&
-          request.verb === 'PUT' &&
-          request.body
-        ) {
-          const proto = Proto.ProvisioningUuid.decode(request.body);
-          const { uuid } = proto;
-          if (!uuid) {
-            throw new Error('registerSecondDevice: expected a UUID');
-          }
-          const url = linkDeviceRoute
-            .toAppUrl({
-              uuid,
-              pubKey: Bytes.toBase64(pubKey),
-            })
-            .toString();
-
-          window.SignalCI?.setProvisioningURL(url);
-
-          setProvisioningUrl(url);
-          request.respond(200, 'OK');
-        } else if (
-          request.path === '/v1/message' &&
-          request.verb === 'PUT' &&
-          request.body
-        ) {
-          const envelope = Proto.ProvisionEnvelope.decode(request.body);
-          request.respond(200, 'OK');
-          wsr.close();
-          envelopeCallbacks?.resolve(envelope);
-        } else {
-          log.error('Unknown websocket message', request.path);
-        }
-      },
-    });
-
-    log.info('provisioning socket open');
-
-    wsr.addEventListener('close', ({ code, reason }) => {
-      log.info(`provisioning socket closed. Code: ${code} Reason: ${reason}`);
-
-      // Note: if we have resolved the envelope already - this has no effect
-      envelopeCallbacks?.reject(new Error('websocket closed'));
-    });
-
-    const envelope = await envelopePromise;
-    const provisionMessage = await provisioningCipher.decrypt(envelope);
-
     await this.queueTask(async () => {
-      const { deviceName, backupFile } = await confirmNumber(
-        provisionMessage.number
-      );
-      if (typeof deviceName !== 'string' || deviceName.length === 0) {
-        throw new Error(
-          'AccountManager.registerSecondDevice: Invalid device name'
-        );
-      }
-      if (
-        !provisionMessage.number ||
-        !provisionMessage.provisioningCode ||
-        !provisionMessage.aciKeyPair ||
-        !provisionMessage.pniKeyPair ||
-        !provisionMessage.aci ||
-        !Bytes.isNotEmpty(provisionMessage.profileKey) ||
-        !Bytes.isNotEmpty(provisionMessage.masterKey) ||
-        !isUntaggedPniString(provisionMessage.untaggedPni)
-      ) {
-        throw new Error(
-          'AccountManager.registerSecondDevice: Provision message was missing key data'
-        );
-      }
-
-      const ourAci = normalizeAci(provisionMessage.aci, 'provisionMessage.aci');
-      const ourPni = normalizePni(
-        toTaggedPni(provisionMessage.untaggedPni),
-        'provisionMessage.pni'
-      );
-
-      const registrationBaton = this.server.startRegistration();
-      try {
-        await this.createAccount({
-          type: AccountType.Linked,
-          number: provisionMessage.number,
-          verificationCode: provisionMessage.provisioningCode,
-          aciKeyPair: provisionMessage.aciKeyPair,
-          pniKeyPair: provisionMessage.pniKeyPair,
-          profileKey: provisionMessage.profileKey,
-          deviceName,
-          backupFile,
-          userAgent: provisionMessage.userAgent,
-          ourAci,
-          ourPni,
-          readReceipts: Boolean(provisionMessage.readReceipts),
-          masterKey: provisionMessage.masterKey,
-        });
-      } finally {
-        this.server.finishRegistration(registrationBaton);
-      }
-
-      await this.registrationDone();
+      await this.createAccount(options);
     });
   }
 
@@ -780,7 +660,7 @@ export default class AccountManager extends EventTarget {
     serviceIdKind: ServiceIdKind,
     identityKey: KeyPairType
   ): Promise<KyberPreKeyRecord> {
-    const logId = `generateLastRestortKyberKey(${serviceIdKind})`;
+    const logId = `generateLastResortKyberKey(${serviceIdKind})`;
 
     const kyberKeyId = getNextKeyId(serviceIdKind, KYBER_KEY_ID_KEY);
     if (typeof kyberKeyId !== 'number') {
@@ -878,7 +758,7 @@ export default class AccountManager extends EventTarget {
       'confirmed'
     );
 
-    // Keep SIGNED_PRE_KEY_MINIMUM keys, drop if older than SIGNED_PRE_KEY_ARCHIVE_AGE
+    // Keep SIGNED_PRE_KEY_MINIMUM keys, drop if older than message queue time
 
     const toDelete: Array<number> = [];
     sortedKeys.forEach((key, index) => {
@@ -887,7 +767,7 @@ export default class AccountManager extends EventTarget {
       }
       const createdAt = key.created_at || 0;
 
-      if (isOlderThan(createdAt, SIGNED_PRE_KEY_ARCHIVE_AGE)) {
+      if (isOlderThan(createdAt, getMessageQueueTime())) {
         const timestamp = new Date(createdAt).toJSON();
         const confirmedText = key.confirmed ? ' (confirmed)' : '';
         log.info(
@@ -935,7 +815,7 @@ export default class AccountManager extends EventTarget {
       'confirmed'
     );
 
-    // Keep LAST_RESORT_KEY_MINIMUM keys, drop if older than LAST_RESORT_KEY_ARCHIVE_AGE
+    // Keep LAST_RESORT_KEY_MINIMUM keys, drop if older than message queue time
 
     const toDelete: Array<number> = [];
     sortedKeys.forEach((key, index) => {
@@ -944,7 +824,7 @@ export default class AccountManager extends EventTarget {
       }
       const createdAt = key.createdAt || 0;
 
-      if (isOlderThan(createdAt, LAST_RESORT_KEY_ARCHIVE_AGE)) {
+      if (isOlderThan(createdAt, getMessageQueueTime())) {
         const timestamp = new Date(createdAt).toJSON();
         const confirmedText = key.isConfirmed ? ' (confirmed)' : '';
         log.info(
@@ -1021,6 +901,19 @@ export default class AccountManager extends EventTarget {
   private async createAccount(
     options: CreateAccountOptionsType
   ): Promise<void> {
+    this.dispatchEvent(new Event('startRegistration'));
+    const registrationBaton = this.server.startRegistration();
+    try {
+      await this.doCreateAccount(options);
+    } finally {
+      this.server.finishRegistration(registrationBaton);
+    }
+    await this.registrationDone();
+  }
+
+  private async doCreateAccount(
+    options: CreateAccountOptionsType
+  ): Promise<void> {
     const {
       number,
       verificationCode,
@@ -1062,6 +955,7 @@ export default class AccountManager extends EventTarget {
     const numberChanged =
       !previousACI && previousNumber && previousNumber !== number;
 
+    let cleanStart = !previousACI && !previousPNI && !previousNumber;
     if (uuidChanged || numberChanged || backupFile !== undefined) {
       if (uuidChanged) {
         log.warn(
@@ -1075,13 +969,16 @@ export default class AccountManager extends EventTarget {
       }
       if (backupFile !== undefined) {
         log.warn(
-          'createAccount: Restoring from backup; deleting all previous data'
+          'createAccount: Restoring from backup; ' +
+            'deleting all previous data'
         );
       }
 
       try {
         await storage.protocol.removeAllData();
         log.info('createAccount: Successfully deleted previous data');
+
+        cleanStart = true;
       } catch (error) {
         log.error(
           'Something went wrong deleting data from previous number',
@@ -1198,6 +1095,16 @@ export default class AccountManager extends EventTarget {
       );
     } else {
       throw missingCaseError(options);
+    }
+
+    // Set backup download path before storing credentials to ensure that
+    // storage service and message receiver are not operating
+    // until the backup is downloaded and imported.
+    if (isBackupEnabled() && cleanStart) {
+      if (options.type === AccountType.Linked && options.ephemeralBackupKey) {
+        await storage.put('backupEphemeralKey', options.ephemeralBackupKey);
+      }
+      await storage.put('backupDownloadPath', getRelativePath(createName()));
     }
 
     // `setCredentials` needs to be called
@@ -1331,7 +1238,7 @@ export default class AccountManager extends EventTarget {
     ]);
 
     if (backupFile !== undefined) {
-      await backupsService.importBackup(() => Readable.from(backupFile));
+      await backupsService.importBackup(() => Readable.from([backupFile]));
     }
   }
 

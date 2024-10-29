@@ -80,11 +80,11 @@
   "icu:databaseError__startOldVersion": {
     "messageformat": "Tavo duomenų bazės versija neatitinka šios „Signal“ versijos. Įsitikink, kad savo kompiuteryje bandai atidaryti naujausią „Signal“ versiją."
   },
-  "icu:databaseError__recover__detail": {
-    "messageformat": "A database error occurred. You can copy the error and contact Signal support to help fix the issue. If you need to use Signal right away, you can attempt to recover your data.\n\nContact support by visiting: {link}"
+  "icu:databaseError__safeStorageBackendChange": {
+    "messageformat": "Nepavyko pasiekti duomenų bazės šifravimo rakto, nes OS šifravimo raktų rinkinys pasikeitė iš {previousBackend} į {currentBackend}. Taip gali nutikti pasikeitus darbalaukio aplinkai, pavyzdžiui, tarp GNOME ir KDE.\n\nPereikite į ankstesnę darbalaukio aplinką."
   },
-  "icu:databaseError__recover__button": {
-    "messageformat": "Recover data"
+  "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
+    "messageformat": "Nepavyko pasiekti duomenų bazės šifravimo rakto, nes OS šifravimo raktų rinkinys pasikeitė iš {previousBackend} į {currentBackend}. Taip gali nutikti pasikeitus darbalaukio aplinkai, pavyzdžiui, tarp GNOME ir KDE.\n\nGrįžkite į ankstesnę darbalaukio aplinką arba pabandykite paleisti „Signal“ naudodami komandinės eilutės parinktį --password-store=\"{previousBackendFlag}\""
   },
   "icu:mainMenuFile": {
     "messageformat": "&Failas"
@@ -575,8 +575,11 @@
   "icu:decryptionErrorToast": {
     "messageformat": "Signal Desktop susidūrė su iššifravimo klaida nuo {name}, įrenginio {deviceId}"
   },
-  "icu:decryptionErrorToastAction": {
+  "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "Pateikti žurnalą"
+  },
+  "icu:Toast--FailedToSendWithEndorsements": {
+    "messageformat": "Failed to send message with endorsements"
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Nuotraukų ir vaizdo įrašų negalima pasirinkti kartu su failais."
@@ -785,8 +788,14 @@
   "icu:attachmentSaved": {
     "messageformat": "Priedas įrašytas."
   },
+  "icu:attachmentSavedPlural": {
+    "messageformat": "{count, plural, one {Attachment saved} other {{count,number} attachments saved}}"
+  },
   "icu:attachmentSavedShow": {
     "messageformat": "Rodyti aplanke"
+  },
+  "icu:attachmentStillDownloading": {
+    "messageformat": "{count, plural, one {Can't save attachment, since it hasn't finished downloading yet} other {Can't save attachments, since {count,number} haven't finished downloading yet}}"
   },
   "icu:you": {
     "messageformat": "Jūs"
@@ -821,11 +830,11 @@
   "icu:mute": {
     "messageformat": "Nutildyti"
   },
-  "icu:cannotUpdateDetail": {
-    "messageformat": "Signal programai nepavyko atsinaujinti. {retry} arba apsilankykite adresu {url} ir įdiekite ją rankiniu būdu. Tuomet, {support} dėl šios problemos"
+  "icu:cannotUpdateDetail-v2": {
+    "messageformat": "„Signal“ nepavyko atsinaujinti. <retryUpdateButton>Bandykite atnaujinti dar kartą</retryUpdateButton> arba apsilankykite {url}, kad įdiegtumėte naujinį rankiniu būdu. Tuomet <contactSupportLink>susisiekite su palaikymo komanda</contactSupportLink> dėl šios problemos"
   },
-  "icu:cannotUpdateRequireManualDetail": {
-    "messageformat": "Signal nepavyko atsinaujinti. Apsilankykite adresu {url}, kad įdiegtumėte programą rankiniu būdu. Tuomet, {support} dėl šios problemos"
+  "icu:cannotUpdateRequireManualDetail-v2": {
+    "messageformat": "„Signal“ nepavyko atsinaujinti. Apsilankykite adresu {url}, kad įdiegtumėte naujinį rankiniu būdu. Tada <contactSupportLink>susisiekite su palaikymo komanda</contactSupportLink> dėl šios problemos"
   },
   "icu:readOnlyVolume": {
     "messageformat": "Tikriausiai, Signal Desktop yra macOS karantine ir negalės būti automatiškai atnaujinta. Pabandykite, naudodami Finder, perkelti  {app} į  {folder}."
@@ -938,8 +947,8 @@
   "icu:NotePreviewModal__Title": {
     "messageformat": "Pastaba"
   },
-  "icu:viewRecentMedia": {
-    "messageformat": "Rodyti paskiausią mediją"
+  "icu:allMediaMenuItem": {
+    "messageformat": "Visi įrašai"
   },
   "icu:back": {
     "messageformat": "Atgal"
@@ -997,6 +1006,18 @@
   },
   "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description-with-sync": {
     "messageformat": "Visos šio pokalbio žinutės bus ištrintos iš visų jūsų įrenginių. Net kai ištrinsite žinutes, vis tiek galėsite ieškoti šio pokalbio."
+  },
+  "icu:deleteConversation": {
+    "messageformat": "Ištrinti"
+  },
+  "icu:ConversationHeader__DeleteConversationConfirmation__title": {
+    "messageformat": "Ištrinti pokalbį?"
+  },
+  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
+    "messageformat": "Visos šio pokalbio žinutės bus ištrintos iš šio įrenginio."
+  },
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
+    "messageformat": "Visos šio pokalbio žinutės bus ištrintos iš visų jūsų įrenginių."
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "Išeiti iš grupės"
@@ -1119,10 +1140,7 @@
     "messageformat": "Nustatymai"
   },
   "icu:Install__instructions__3": {
-    "messageformat": "Bakstelėkite ant {plusButton} („Android“ įrenginiuose) arba ant {linkNewDevice} („iPhone“ įrenginiuose)"
-  },
-  "icu:Install__qr-failed-load": {
-    "messageformat": "Nepavyko įkelti QR kodo. Patikrink interneto ryšį ir bandyk dar kartą. <retry>Bandyti dar kartą</retry>"
+    "messageformat": "Bakstelėkite {linkNewDevice}"
   },
   "icu:Install__qr-failed-load__error--timeout": {
     "messageformat": "Nepavyko įkelti QR kodo. Patikrink interneto ryšį ir bandyk dar kartą."
@@ -1214,9 +1232,6 @@
   "icu:calling__cant-join": {
     "messageformat": "Negalima prisijungti prie skambučio"
   },
-  "icu:calling__dialog-already-in-call": {
-    "messageformat": "Jau esate skambutyje."
-  },
   "icu:calling__call-link-connection-issues": {
     "messageformat": "Nepavyko gauti skambučio nuorodos informacijos. Patikrinkite tinklo ryšį ir bandykite dar kartą."
   },
@@ -1228,6 +1243,9 @@
   },
   "icu:calling__call-link-default-title": {
     "messageformat": "Signal skambutis"
+  },
+  "icu:calling__call-link-delete-failed": {
+    "messageformat": "Nuorodos ištrinti negalima. Patikrinkite interneto ryšį ir bandykite dar kartą."
   },
   "icu:calling__join-request-denied": {
     "messageformat": "Tavo prašymas prisijungti prie šio skambučio atmestas."
@@ -1400,20 +1418,20 @@
   "icu:calling__in-this-call": {
     "messageformat": "{people, plural, one {Šiame skambutyje · {people,number} žmogus} few {Šiame skambutyje · {people,number} žmonės} many {Šiame skambutyje · {people,number} žmonių} other {Šiame skambutyje · {people,number} žmogus}}"
   },
-  "icu:calling__you-have-blocked": {
-    "messageformat": "Tu užblokavai naudotoją {name}"
-  },
   "icu:calling__blocked-participant": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "Naudotojas {name} užblokuotas"
   },
   "icu:calling__block-info-title": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "Naudotojas {name} užblokuotas"
   },
   "icu:calling__block-info": {
-    "messageformat": "You won’t receive their audio or video and they won’t receive yours."
+    "messageformat": "Jūs nematysite ir negirdėsite naudotojo, o jis nematys ir negirdės jūsų."
   },
   "icu:calling__missing-media-keys": {
     "messageformat": "Negalima gauti garso ir vaizdo iš {name}"
+  },
+  "icu:calling__missing-media-keys--unknown-contact": {
+    "messageformat": "Negalima gauti garso ir vaizdo"
   },
   "icu:calling__missing-media-keys-info": {
     "messageformat": "Taip gali būti dėl to, kad šis žmogus nepatvirtino tavo saugumo numerio pasikeitimo, turi problemų su įrenginiu arba tave užblokavo."
@@ -1438,6 +1456,9 @@
   },
   "icu:calling__presenting--info": {
     "messageformat": "Signal bendrina {window}."
+  },
+  "icu:calling__presenting--info--unknown": {
+    "messageformat": "„Signal“ ekrano bendrinimas yra aktyvus"
   },
   "icu:calling__presenting--reconnecting": {
     "messageformat": "Jungiamasi iš naujo…"
@@ -1621,6 +1642,9 @@
   },
   "icu:timestampFormat__long--yesterday": {
     "messageformat": "Vakar {time}"
+  },
+  "icu:messageLoop": {
+    "messageformat": "Gali būti, kad „Signal“ nepavyksta apdoroti gaunamos žinutės."
   },
   "icu:messageBodyTooLong": {
     "messageformat": "Žinutės turinys yra per ilgas."
@@ -1834,9 +1858,6 @@
   },
   "icu:autoUpdateRetry": {
     "messageformat": "Bandykite atnaujinti programą dar kartą"
-  },
-  "icu:autoUpdateContactSupport": {
-    "messageformat": "susisiekite su palaikymu"
   },
   "icu:autoUpdateNewVersionMessage": {
     "messageformat": "Spustelėkite, norėdami paleisti Signal iš naujo"
@@ -2625,10 +2646,10 @@
     "messageformat": "Atmesti"
   },
   "icu:declinedIncomingAudioCall": {
-    "messageformat": "Tu atmetei balso skambutį"
+    "messageformat": "Atmestas balso skambutis"
   },
   "icu:declinedIncomingVideoCall": {
-    "messageformat": "Jūs atmetėte vaizdo skambutį"
+    "messageformat": "Atmestas vaizdo skambutis"
   },
   "icu:acceptedIncomingAudioCall": {
     "messageformat": "Gaunamasis balso skambutis"
@@ -2661,10 +2682,10 @@
     "messageformat": "Programėlė „Signal“ tebebus įjungta pranešimų skiltyje. Gali tai pakeisti nustatymuose."
   },
   "icu:incomingAudioCall": {
-    "messageformat": "Gaunamasis balso skambutis…"
+    "messageformat": "Gaunamasis balso skambutis"
   },
   "icu:incomingVideoCall": {
-    "messageformat": "Gaunamasis vaizdo skambutis…"
+    "messageformat": "Gaunamasis vaizdo skambutis"
   },
   "icu:outgoingAudioCall": {
     "messageformat": "Išsiunčiamasis balso skambutis"
@@ -2709,10 +2730,13 @@
     "messageformat": "{count, plural, one {{count,number} žmogus} few {{count,number} žmonės} many {{count,number} žmonių} other {{count,number} žmogus}}"
   },
   "icu:CallControls__InfoDisplay--audio-call": {
-    "messageformat": "Garso skambutis"
+    "messageformat": "Balso skambutis"
   },
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "Skambučio nuoroda"
+  },
+  "icu:CallControls__InfoDisplay--group-call": {
+    "messageformat": "Grupės skambutis"
   },
   "icu:CallControls__InfoDisplay--adhoc-join-request-pending": {
     "messageformat": "Laukiama, kol įleis"
@@ -2772,16 +2796,16 @@
     "messageformat": "{people, plural, one {Skambutyje yra {people,number} žmogus} few {Skambutyje yra {people,number} žmonės} many {Skambutyje yra {people,number} žmonių} other {Skambutyje yra {people,number} žmonių}}"
   },
   "icu:calling__call-notification__ended": {
-    "messageformat": "Grupės skambutis baigtas"
+    "messageformat": "Vaizdo skambutis baigtas"
   },
   "icu:calling__call-notification__started-by-someone": {
-    "messageformat": "Buvo pradėtas grupės skambutis"
+    "messageformat": "Pradėtas vaizdo skambutis"
   },
   "icu:calling__call-notification__started-by-you": {
-    "messageformat": "Jūs pradėjote grupės skambutį"
+    "messageformat": "Pradėjote vaizdo skambutį"
   },
   "icu:calling__call-notification__started": {
-    "messageformat": "{name} pradėjo grupės skambutį"
+    "messageformat": "{name} pradėjo vaizdo skambutį"
   },
   "icu:calling__in-another-call-tooltip": {
     "messageformat": "Jūs jau esate skambutyje"
@@ -2970,7 +2994,7 @@
     "messageformat": "Tu negali prisijungti prie grupės per šią grupės nuorodą, nes administratorius tave pašalino."
   },
   "icu:GroupV2--join--prompt-with-approval": {
-    "messageformat": "Prieš tai, kai galėsite prisijungti prie šios grupės, jos administratorius privalo patvirtinti jūsų prašymą. Jei prašymas bus patvirtintas, jūsų vardas ir nuotrauka bus bendrinami su grupės nariais."
+    "messageformat": "Prieš tai, kai galėsite prisijungti prie šios grupės, jos administratorius privalo patvirtinti jūsų prašymą. Kai paprašysite prisijungti prie grupės, jūsų vardas ir nuotrauka bus bendrinami su jos nariais."
   },
   "icu:GroupV2--join--join-button": {
     "messageformat": "Prisijungti"
@@ -3347,11 +3371,8 @@
   "icu:GroupV2--admin-approval-remove-one--other--unknown": {
     "messageformat": "Naudotojo {joinerName} prašymas prisijungti prie grupės buvo atmestas."
   },
-  "icu:GroupV2--admin-approval-bounce--one": {
-    "messageformat": "{joinerName} paprašė ir panaikino savo prašymą prisijungti per grupės nuorodą"
-  },
-  "icu:GroupV2--admin-approval-bounce": {
-    "messageformat": "{joinerName} paprašė ir panaikino {numberOfRequests,number} prašymus(-ų) prisijungti per grupės nuorodą"
+  "icu:GroupV2--admin-approval-bounce--pluralized": {
+    "messageformat": "{numberOfRequests, plural, one {{joinerName} paprašė ir atšaukė savo prašymą prisijungti per grupės nuorodą.} few {{joinerName} paprašė ir atšaukė {numberOfRequests,number} prašymus prisijungti per grupės nuorodą.} many {{joinerName} paprašė ir atšaukė {numberOfRequests,number} prašymo prisijungti per grupės nuorodą.} other {{joinerName} paprašė ir atšaukė {numberOfRequests,number} prašymų prisijungti per grupės nuorodą.}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "Jūs įjungėte grupės nuorodą su išjungtais administratoriaus patvirtinimais."
@@ -3527,6 +3548,93 @@
   "icu:BadgeSustainerInstructions__instructions__3": {
     "messageformat": "Bakstelėk „Paremti Signal“ ir prenumeruok"
   },
+  "icu:BackupImportScreen__title": {
+    "messageformat": "Sinchronizuojamos žinutės"
+  },
+  "icu:BackupImportScreen__progressbar-hint": {
+    "messageformat": "Atsisiunčiama {currentSize} iš {totalSize} ({fractionComplete,number,percent})..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--processing": {
+    "messageformat": "Baigiamas žinučių perkėlimas..."
+  },
+  "icu:BackupImportScreen__progressbar-hint--preparing": {
+    "messageformat": "Ruošiamasi atsisiųsti..."
+  },
+  "icu:BackupImportScreen__description": {
+    "messageformat": "Tai gali užtrukti kelias minutes, priklausomai nuo atsarginės kopijos dydžio"
+  },
+  "icu:BackupImportScreen__cancel": {
+    "messageformat": "Atšaukti perkėlimą"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__title": {
+    "messageformat": "Atšaukti perkėlimą?"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__body": {
+    "messageformat": "Jūsų žinučių ir įrašų atkūrimas nebaigtas. Jei nuspręsite atšaukti, vėl galėsite perkelti iš nustatymų."
+  },
+  "icu:BackupImportScreen__cancel-confirmation__cancel": {
+    "messageformat": "Tęsti perkėlimą"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__confirm": {
+    "messageformat": "Atšaukti perkėlimą"
+  },
+  "icu:BackupImportScreen__error__title": {
+    "messageformat": "Klaida perkeliant žinutes"
+  },
+  "icu:BackupImportScreen__error__body": {
+    "messageformat": "Nepavyko perkelti žinučių. Patikrinkite interneto ryšį ir bandykite dar kartą."
+  },
+  "icu:BackupImportScreen__error__confirm": {
+    "messageformat": "Bandyti dar kartą"
+  },
+  "icu:BackupImportScreen__skip": {
+    "messageformat": "Praleisti"
+  },
+  "icu:BackupImportScreen__skip-confirmation__title": {
+    "messageformat": "Praleisti žinučių perkėlimą?"
+  },
+  "icu:BackupImportScreen__skip-confirmation__body": {
+    "messageformat": "Jei nuspręsite praleisti, neturėsite prieigos prie jokių žinučių ar įrašų šiame įrenginyje. Praleidę, naują perkėlimą galite pradėti Nustatymai > Pokalbiai > Perkėlimas."
+  },
+  "icu:BackupImportScreen__skip-confirmation__cancel": {
+    "messageformat": "Atšaukti"
+  },
+  "icu:BackupMediaDownloadProgress__title-in-progress": {
+    "messageformat": "Įrašai atkuriami"
+  },
+  "icu:BackupMediaDownloadProgress__title-paused": {
+    "messageformat": "Atkūrimas pristabdytas"
+  },
+  "icu:BackupMediaDownloadProgress__button-pause": {
+    "messageformat": "Pristabdyti perkėlimą"
+  },
+  "icu:BackupMediaDownloadProgress__button-resume": {
+    "messageformat": "Tęsti perkėlimą"
+  },
+  "icu:BackupMediaDownloadProgress__button-cancel": {
+    "messageformat": "Atšaukti perkėlimą"
+  },
+  "icu:BackupMediaDownloadProgress__button-more": {
+    "messageformat": "Daugiau parinkčių"
+  },
+  "icu:BackupMediaDownloadProgress__title-complete": {
+    "messageformat": "Atkūrimas užbaigtas"
+  },
+  "icu:BackupMediaDownloadProgress__progressbar-hint": {
+    "messageformat": "{currentSize} iš {totalSize}"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__title": {
+    "messageformat": "Atšaukti įrašų perkėlimą?"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__description": {
+    "messageformat": "Jūsų žinučių ir įrašų atkūrimas nebaigtas. Jei nuspręsite atšaukti, vėl galėsite perkelti iš nustatymų."
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
+    "messageformat": "Tęsti perkėlimą"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
+    "messageformat": "Atšaukti perkėlimą"
+  },
   "icu:CompositionArea--expand": {
     "messageformat": "Išskleisti"
   },
@@ -3575,8 +3683,8 @@
   "icu:ContactModal--remove-from-group": {
     "messageformat": "Šalinti iš grupės"
   },
-  "icu:ContactModal--already-in-call": {
-    "messageformat": "Jūs jau esate skambutyje"
+  "icu:ContactModal--voice": {
+    "messageformat": "Skambutis"
   },
   "icu:showChatColorEditor": {
     "messageformat": "Pokalbio spalva"
@@ -3759,7 +3867,7 @@
     "messageformat": "Atstatyti nuorodą"
   },
   "icu:GroupLinkManagement--approve-label": {
-    "messageformat": "Patvirtinti naujus narius"
+    "messageformat": "Reikalauti administratoriaus patvirtinimo"
   },
   "icu:GroupLinkManagement--approve-info": {
     "messageformat": "Reikalauti, kad administratorius patvirtintų naujus, per grupės nuorodą prisijungiančius, narius"
@@ -3947,11 +4055,11 @@
   "icu:MessageAudio--playbackRatep5": {
     "messageformat": "0,5"
   },
-  "icu:emptyInboxMessage": {
-    "messageformat": "Spustelėkite aukščiau ant {composeIcon} ir ieškokite adresatų ar grupių, kuriems norite rašyti žinutę."
+  "icu:emptyInbox__title": {
+    "messageformat": "Pokalbių nėra"
   },
-  "icu:composeIcon": {
-    "messageformat": "rašymo mygtukas"
+  "icu:emptyInbox__subtitle": {
+    "messageformat": "Čia bus rodomi naujausi pokalbiai."
   },
   "icu:ForwardMessageModal__title": {
     "messageformat": "Kam persiųsti"
@@ -4378,6 +4486,12 @@
   },
   "icu:ProfileEditorModal--error": {
     "messageformat": "Nepavyko atnaujinti jūsų profilio. Bandykite dar kartą."
+  },
+  "icu:ProfileEditor__invalid-about__title": {
+    "messageformat": "Netinkami simboliai"
+  },
+  "icu:ProfileEditor__invalid-about__body": {
+    "messageformat": "Vieno ar daugiau įvestų simbolių naudoti negalima. Bandykite dar kartą."
   },
   "icu:AnnouncementsOnlyGroupBanner--modal": {
     "messageformat": "Rašyti žinutę administratoriui"
@@ -4841,6 +4955,12 @@
   "icu:Stories__list-empty": {
     "messageformat": "Šiuo metu nėra naujų istorijų"
   },
+  "icu:Stories__list__empty--title": {
+    "messageformat": "Istorijų nėra"
+  },
+  "icu:Stories__list__empty--subtitle": {
+    "messageformat": "Čia bus rodomos paskutinės naujienos."
+  },
   "icu:Stories__list--sending": {
     "messageformat": "Siunčiama…"
   },
@@ -4855,6 +4975,9 @@
   },
   "icu:Stories__placeholder--text": {
     "messageformat": "Spustelėk, jei nori žiūrėti istoriją"
+  },
+  "icu:Stories__placeholder-with-icon--text-2": {
+    "messageformat": "Spustelėkite <newStoryButtonIcon></newStoryButtonIcon>, kad pridėtumėte į istoriją."
   },
   "icu:Stories__from-to-group": {
     "messageformat": "Nuo {name} grupei {group}"
@@ -5096,7 +5219,10 @@
   "icu:StoryViewsNRepliesModal__tab--replies": {
     "messageformat": "Atsakymai"
   },
-  "icu:StoryViewsNRepliesModal__reacted": {
+  "icu:StoryViewsNRepliesModal__reacted--you": {
+    "messageformat": "Sureagavo į istoriją"
+  },
+  "icu:StoryViewsNRepliesModal__reacted--someone-else": {
     "messageformat": "Sureagavo į istoriją"
   },
   "icu:StoryViewsNRepliesModal__not-a-member": {
@@ -5115,7 +5241,7 @@
     "messageformat": "Istorija"
   },
   "icu:StoryListItem__unhide": {
-    "messageformat": "Rodyti istorijas"
+    "messageformat": "Nebeslėpti istorijos"
   },
   "icu:StoryListItem__hide": {
     "messageformat": "Slėpti istoriją"
@@ -5386,7 +5512,10 @@
     "messageformat": "Išvalyti skambučių istoriją?"
   },
   "icu:CallsTab__ConfirmClearCallHistory__Body": {
-    "messageformat": "Visa skambučių istorija bus ištrinta visam laikui"
+    "messageformat": "Visa skambučių istorija bus ištrinta visam laikui."
+  },
+  "icu:CallsTab__ConfirmClearCallHistory__Body--call-links": {
+    "messageformat": "Visa skambučių istorija bus ištrinta visam laikui. Jūsų sukurtos skambučių nuorodos nebeveiks jas turintiems žmonėms. "
   },
   "icu:CallsTab__ConfirmClearCallHistory__ConfirmButton": {
     "messageformat": "Išvalyti"
@@ -5394,8 +5523,14 @@
   "icu:CallsTab__ToastCallHistoryCleared": {
     "messageformat": "Skambučių istorija išvalyta"
   },
-  "icu:CallsTab__EmptyStateText": {
-    "messageformat": "Spustelėk peržiūrėti ar pradėti skambutį"
+  "icu:CallsTab__ClearCallHistoryError--call-links": {
+    "messageformat": "Ne visas skambučių nuorodas pavyko ištrinti. Patikrinkite interneto ryšį ir bandykite dar kartą."
+  },
+  "icu:CallsTab__ClearCallHistoryError": {
+    "messageformat": "Ne visą skambučių istoriją pavyko ištrinti. Patikrinkite interneto ryšį ir bandykite dar kartą."
+  },
+  "icu:CallsTab__EmptyStateText--with-icon-2": {
+    "messageformat": "Spustelėkite <newCallButtonIcon></newCallButtonIcon> norėdami pradėti naują balso arba vaizdo skambutį."
   },
   "icu:CallsList__SearchInputPlaceholder": {
     "messageformat": "Ieškoti"
@@ -5406,8 +5541,17 @@
   "icu:CallsList__ToggleFilterByMissed__RoleDescription": {
     "messageformat": "Perjungti"
   },
-  "icu:CallsList__EmptyState--noQuery": {
-    "messageformat": "Nesenų skambučių nėra. Pradėk nuo skambučio draugui."
+  "icu:CallsList__EmptyState--noQuery__title": {
+    "messageformat": "Skambučių nėra"
+  },
+  "icu:CallsList__EmptyState--noQuery__subtitle": {
+    "messageformat": "Čia bus rodomi naujausi skambučiai."
+  },
+  "icu:CallsList__EmptyState--noQuery--missed__title": {
+    "messageformat": "Nėra praleistų skambučių"
+  },
+  "icu:CallsList__EmptyState--noQuery--missed__subtitle": {
+    "messageformat": "Čia bus rodomi praleisti skambučiai."
   },
   "icu:CallsList__EmptyState--hasQuery": {
     "messageformat": "Paieška „{query}“ be rezultatų"
@@ -5424,8 +5568,8 @@
   "icu:CallsList__ItemCallInfo--Missed": {
     "messageformat": "Praleisti"
   },
-  "icu:CallsList__ItemCallInfo--GroupCall": {
-    "messageformat": "Grupės skambutis"
+  "icu:CallsList__ItemCallInfo--Declined": {
+    "messageformat": "Atmestas"
   },
   "icu:CallsList__ItemCallInfo--CallLink": {
     "messageformat": "Skambučio nuoroda"
@@ -5437,7 +5581,7 @@
     "messageformat": "Išeiti iš dabartinio skambučio?"
   },
   "icu:CallsList__LeaveCallDialogBody": {
-    "messageformat": "Prieš prisijungdami prie naujo skambučio, turite išeiti iš dabartinio skambučio."
+    "messageformat": "Prieš pradėdami skambutį ar prisijungdami prie naujo skambučio, turite išeiti iš dabartinio skambučio."
   },
   "icu:CallsList__LeaveCallDialogButton--leave": {
     "messageformat": "Išeiti iš skambučio"
@@ -5451,32 +5595,59 @@
   "icu:CallsNewCallButton--return": {
     "messageformat": "Grįžti"
   },
-  "icu:CallsNewCallButtonTooltip--in-another-call": {
-    "messageformat": "Prieš prisijungdami prie naujo skambučio, turite išeiti iš dabartinio skambučio"
-  },
-  "icu:CallHistory__Description--Default": {
-    "messageformat": "{type, select, Audio {{direction, select, Outgoing {Išsiunčiamasis balso skambutis} other {Gaunamasis balso skambutis}}} Video {{direction, select, Outgoing {Išsiunčiamasis vaizdo skambutis} other {Gaunamasis vaizdo skambutis}}} Group {{direction, select, Outgoing {Išsiunčiamasis grupės skambutis} other {Gaunamasis grupės skambutis}}} other {{direction, select, Outgoing {Išsiunčiamasis skambutis} other {Gaunamasis skambutis}}}}"
-  },
-  "icu:CallHistory__Description--Missed": {
-    "messageformat": "{type, select, Audio {Praleistas balso skambutis} Video {Praleistas vaizdo skambutis} Group {Praleistas grupės skambutis} other {Praleistas skambutis}}"
-  },
-  "icu:CallHistory__Description--Unanswered": {
-    "messageformat": "{type, select, Audio {Neatsakytas balso skambutis} Video {Neatsakytas vaizdo skambutis} Group {Neatsakytas grupės skambutis} other {Neatsakytas  skambutis}}"
-  },
-  "icu:CallHistory__Description--Declined": {
-    "messageformat": "{type, select, Audio {Atmestas balso skambutis} Video {Atmestas vaizdo skambutis} Group {Atmestas grupės skambutis} other {Atmestas  skambutis}}"
-  },
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "Skambučio nuoroda"
   },
+  "icu:CallHistory__DescriptionVideoCall--Default": {
+    "messageformat": "{direction, select, Outgoing {Išsiunčiamasis vaizdo skambutis} other {Gaunamasis vaizdo skambutis}}"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Missed": {
+    "messageformat": "Praleistas vaizdo skambutis"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Unanswered": {
+    "messageformat": "Neatsakytas vaizdo skambutis"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Declined": {
+    "messageformat": "Atmestas vaizdo skambutis"
+  },
   "icu:CallLinkDetails__Join": {
     "messageformat": "Prisijungti"
+  },
+  "icu:CallLinkDetails__AddCallNameLabel": {
+    "messageformat": "Pridėti skambučio pavadinimą"
+  },
+  "icu:CallLinkDetails__EditCallNameLabel": {
+    "messageformat": "Redaguoti skambučio pavadinimą"
+  },
+  "icu:CallLinkDetails__ApproveAllMembersLabel": {
+    "messageformat": "Reikalauti administratoriaus patvirtinimo"
+  },
+  "icu:CallLinkDetails__SettingTooltip--disabled-for-active-call": {
+    "messageformat": "Šio nustatymo negalima pakeisti, kol vyksta skambutis"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "Kopijuoti nuorodą"
   },
   "icu:CallLinkDetails__ShareLinkViaSignal": {
     "messageformat": "Bendrinti nuorodą per „Signal“"
+  },
+  "icu:CallLinkDetails__DeleteLink": {
+    "messageformat": "Ištrinti nuorodą"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Title": {
+    "messageformat": "Ištrinti skambučio nuorodą?"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Body": {
+    "messageformat": "Ši nuoroda nebeveiks nė vienam ją gavusiam žmogui."
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
+    "messageformat": "Atšaukti"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Delete": {
+    "messageformat": "Ištrinti"
+  },
+  "icu:CallLinkDetails__DeleteLinkTooltip--disabled-for-active-call": {
+    "messageformat": "Šios nuorodos negalima ištrinti, kol vyksta skambutis"
   },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "Skambučio nuorodos informacija"
@@ -5487,17 +5658,29 @@
   "icu:CallLinkEditModal__AddCallNameLabel": {
     "messageformat": "Pridėti skambučio pavadinimą"
   },
-  "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
-    "messageformat": "Patvirtinti visus narius"
+  "icu:CallLinkEditModal__EditCallNameLabel": {
+    "messageformat": "Redaguoti skambučio pavadinimą"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--Off": {
+  "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
+    "messageformat": "Reikalauti administratoriaus patvirtinimo"
+  },
+  "icu:CallLinkPendingParticipantModal__ApproveButtonLabel": {
+    "messageformat": "Patvirtinti ir įleisti"
+  },
+  "icu:CallLinkPendingParticipantModal__DenyButtonLabel": {
+    "messageformat": "Atmesti ir neįleisti"
+  },
+  "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "Išjungta"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--On": {
+  "icu:CallLinkRestrictionsSelect__Option--On": {
     "messageformat": "Įjungta"
   },
   "icu:CallLinkAddNameModal__Title": {
     "messageformat": "Pridėti skambučio pavadinimą"
+  },
+  "icu:CallLinkAddNameModal__Title--Edit": {
+    "messageformat": "Redaguoti skambučio pavadinimą"
   },
   "icu:CallLinkAddNameModal__NameLabel": {
     "messageformat": "Skambučio pavadinimas"
@@ -5542,10 +5725,22 @@
     "messageformat": "Smulkūs patobulinimai, klaidų pataisymai ir veikimo pagerinimas. Ačiū, kad naudoji „Signal“!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.16--0": {
-    "messageformat": "Ištaisėme klaidą, dėl kurios nebuvo parodomas skambučio suskleidimo mygtukas, kol tas skambutis buvo jungiamas iš naujo."
+  "icu:WhatsNew__v7.29--0": {
+    "messageformat": "Šis naujinys padidina paleidimo greitį maždaug 5 %."
   },
-  "icu:WhatsNew__v7.17--0": {
-    "messageformat": "We wanted things to be slicker and quicker for sticker clickers, so we fixed a bug that sometimes prevented Signal from launching the sticker viewer if you tried to open a sticker pack link while the app was closed."
+  "icu:WhatsNew__v7.30--header": {
+    "messageformat": "Pristatome skambučių nuorodas – patogesnį būdą bendrauti."
+  },
+  "icu:WhatsNew__v7.30--0": {
+    "messageformat": "Dabar galite greitai sukurti paprastą nuorodą, kuria bet kuris „Signal“ naudotojas gali prisijungti prie grupės skambučio nebūdamas grupės pokalbio nariu."
+  },
+  "icu:WhatsNew__v7.30--1": {
+    "messageformat": "Skambučių nuorodomis galima naudotis pakartotinai – tai puikus pasirinkimas reguliariai bendrauti su draugais ar su kolegomis."
+  },
+  "icu:WhatsNew__v7.30--2": {
+    "messageformat": "Galite tvarkyti savo skambučių nuorodas, valdyti patvirtinimo nustatymus ir, norėdami greitai pasidalinti, kopijuoti nuorodas iš skambučių skirtuko."
+  },
+  "icu:WhatsNew__v7.31--0": {
+    "messageformat": "Now you can quickly download every photo in an album when you receive a message with multiple attachments. But if you were a gallery curator with impeccable taste in another life, you can still save them individually too. Thanks, <linkMajorMayer>@major-mayer</linkMajorMayer>!"
   }
 }

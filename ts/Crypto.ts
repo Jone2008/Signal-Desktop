@@ -3,7 +3,7 @@
 
 import { Buffer } from 'buffer';
 import Long from 'long';
-import { HKDF } from '@signalapp/libsignal-client';
+import { Aci, HKDF } from '@signalapp/libsignal-client';
 
 import * as Bytes from './Bytes';
 import { Crypto } from './context/Crypto';
@@ -12,7 +12,10 @@ import { HashType, CipherType, UUID_BYTE_SIZE } from './types/Crypto';
 import { ProfileDecryptError } from './types/errors';
 import { getBytesSubarray } from './util/uuidToBytes';
 import { logPadSize } from './util/logPadding';
-import { Environment } from './environment';
+import { Environment, getEnvironment } from './environment';
+import { toWebSafeBase64 } from './util/webSafeBase64';
+
+import type { AciString } from './types/ServiceId';
 
 export { HashType, CipherType };
 
@@ -68,6 +71,26 @@ export function deriveMasterKeyFromGroupV1(groupV1Id: Uint8Array): Uint8Array {
   const [part1] = deriveSecrets(groupV1Id, salt, info);
 
   return part1;
+}
+
+export function hashProfileKey(
+  profileKey: string | undefined,
+  aci: AciString
+): string {
+  if (!profileKey) {
+    return 'none';
+  }
+
+  const profileKeyBytes = Bytes.fromBase64(profileKey);
+  const aciBytes = Aci.parseFromServiceIdString(aci).getRawUuidBytes();
+  const hashBytes = hmacSha256(
+    profileKeyBytes,
+    Bytes.concatenate([Bytes.fromString('profileKeyHash'), aciBytes])
+  );
+
+  const webSafe = toWebSafeBase64(Bytes.toBase64(hashBytes));
+
+  return webSafe.slice(-3);
 }
 
 export function computeHash(data: Uint8Array): string {
@@ -271,7 +294,7 @@ export function deriveMediaIdFromMediaName(
     BACKUP_MEDIA_ID_LEN,
     Buffer.from(backupKey),
     Buffer.from(BACKUP_MEDIA_ID_INFO),
-    Buffer.from(Bytes.fromBase64(mediaName))
+    Buffer.from(mediaName, 'utf8')
   );
 }
 
@@ -636,7 +659,7 @@ export function encryptAttachment({
     throw new Error(`${logId}: invalid length attachment keys`);
   }
 
-  if (dangerousTestOnlyIv && window.getEnvironment() !== Environment.Test) {
+  if (dangerousTestOnlyIv && getEnvironment() !== Environment.Test) {
     throw new Error(`${logId}: Used dangerousTestOnlyIv outside tests!`);
   }
 
@@ -723,7 +746,7 @@ export function decryptProfile(data: Uint8Array, key: Uint8Array): Uint8Array {
 export function encryptProfileItemWithPadding(
   item: Uint8Array,
   profileKey: Uint8Array,
-  paddedLengths: typeof PaddedLengths[keyof typeof PaddedLengths]
+  paddedLengths: (typeof PaddedLengths)[keyof typeof PaddedLengths]
 ): Uint8Array {
   const paddedLength = paddedLengths.find(
     (length: number) => item.byteLength <= length

@@ -16,6 +16,7 @@ import { dropNull } from '../util/dropNull';
 import { decryptAttachmentV2ToSink } from '../AttachmentCrypto';
 
 import Avatar = Proto.ContactDetails.IAvatar;
+import { stringToMIMEType } from '../types/MIME';
 
 const { Reader } = protobuf;
 
@@ -31,6 +32,7 @@ type MessageWithAvatar<Message extends OptionalFields> = Omit<
 > & {
   avatar?: ContactAvatarType;
   expireTimer?: DurationInSeconds;
+  expireTimerVersion: number | null;
   number?: string | undefined;
 };
 
@@ -145,16 +147,19 @@ export class ParseContactsTransform extends Transform {
             reader.pos,
             reader.pos + attachmentSize
           );
-          const hash = computeHash(data);
+          const hash = computeHash(avatarData);
 
-          // eslint-disable-next-line no-await-in-loop
-          const local = await window.Signal.Migrations.writeNewAttachmentData(
-            avatarData
-          );
+          const local =
+            // eslint-disable-next-line no-await-in-loop
+            await window.Signal.Migrations.writeNewAttachmentData(avatarData);
 
+          const contentType = this.activeContact.avatar?.contentType;
           const prepared = prepareContact(this.activeContact, {
             ...this.activeContact.avatar,
             ...local,
+            contentType: contentType
+              ? stringToMIMEType(contentType)
+              : undefined,
             hash,
           });
           if (prepared) {
@@ -208,6 +213,7 @@ function prepareContact(
   const result = {
     ...proto,
     expireTimer,
+    expireTimerVersion: proto.expireTimerVersion ?? null,
     aci,
     avatar,
     number: dropNull(proto.number),

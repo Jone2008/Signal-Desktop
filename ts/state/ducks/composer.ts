@@ -5,6 +5,7 @@ import path from 'path';
 import { debounce, isEqual } from 'lodash';
 import type { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { v4 as generateUuid } from 'uuid';
+import { webUtils } from 'electron';
 
 import type { ReadonlyDeep } from 'type-fest';
 import type {
@@ -18,10 +19,11 @@ import {
   isVideoAttachment,
   isImageAttachment,
 } from '../../types/Attachment';
+import { DataReader, DataWriter } from '../../sql/Client';
 import type { BoundActionCreatorsMapObject } from '../../hooks/useBoundActions';
 import type { DraftBodyRanges } from '../../types/BodyRange';
 import type { LinkPreviewType } from '../../types/message/LinkPreviews';
-import type { MessageAttributesType } from '../../model-types.d';
+import type { ReadonlyMessageAttributesType } from '../../model-types.d';
 import type { NoopActionType } from './noop';
 import type { ShowToastActionType } from './toast';
 import type { StateType as RootStateType } from '../reducer';
@@ -103,14 +105,17 @@ type ComposerStateByConversationType = {
   linkPreviewLoading: boolean;
   linkPreviewResult?: LinkPreviewType;
   messageCompositionId: string;
-  quotedMessage?: Pick<MessageAttributesType, 'conversationId' | 'quote'>;
+  quotedMessage?: Pick<
+    ReadonlyMessageAttributesType,
+    'conversationId' | 'quote'
+  >;
   sendCounter: number;
   shouldSendHighQualityAttachments?: boolean;
 };
 
 // eslint-disable-next-line local-rules/type-alias-readonlydeep
 export type QuotedMessageType = Pick<
-  MessageAttributesType,
+  ReadonlyMessageAttributesType,
   'conversationId' | 'quote'
 >;
 
@@ -336,7 +341,7 @@ function scrollToQuotedMessage({
   ShowToastActionType | ScrollToMessageActionType
 > {
   return async (dispatch, getState) => {
-    const messages = await window.Signal.Data.getMessagesBySentAt(sentAt);
+    const messages = await DataReader.getMessagesBySentAt(sentAt);
     const message = messages.find(item =>
       Boolean(
         item.conversationId === conversationId &&
@@ -765,7 +770,7 @@ export function setQuoteByMessageId(
         timestamp,
       });
 
-      window.Signal.Data.updateConversation(conversation.attributes);
+      await DataWriter.updateConversation(conversation.attributes);
     }
 
     if (message) {
@@ -866,7 +871,7 @@ function addAttachment(
         });
       }
 
-      window.Signal.Data.updateConversation(conversation.attributes);
+      await DataWriter.updateConversation(conversation.attributes);
     }
   };
 }
@@ -904,7 +909,7 @@ function addPendingAttachment(
     if (conversation) {
       conversation.attributes.draftAttachments = nextAttachments;
       conversation.attributes.draftChanged = true;
-      window.Signal.Data.updateConversation(conversation.attributes);
+      drop(DataWriter.updateConversation(conversation.attributes));
     }
   };
 }
@@ -1065,7 +1070,7 @@ function processAttachments({
             generateScreenshot: true,
           });
           if (!attachment) {
-            removeAttachment(conversationId, file.path)(
+            removeAttachment(conversationId, webUtils.getPathForFile(file))(
               dispatch,
               getState,
               undefined
@@ -1082,7 +1087,7 @@ function processAttachments({
             'handleAttachmentsProcessing: failed to process attachment:',
             err.stack
           );
-          removeAttachment(conversationId, file.path)(
+          removeAttachment(conversationId, webUtils.getPathForFile(file))(
             dispatch,
             getState,
             undefined
@@ -1201,7 +1206,7 @@ function removeAttachment(
     if (conversation) {
       conversation.attributes.draftAttachments = nextAttachments;
       conversation.attributes.draftChanged = true;
-      window.Signal.Data.updateConversation(conversation.attributes);
+      await DataWriter.updateConversation(conversation.attributes);
     }
 
     replaceAttachments(conversationId, nextAttachments)(
@@ -1312,7 +1317,7 @@ function saveDraft(
       draftChanged: true,
       draftBodyRanges: [],
     });
-    window.Signal.Data.updateConversation(conversation.attributes);
+    drop(DataWriter.updateConversation(conversation.attributes));
     return;
   }
 
@@ -1336,7 +1341,7 @@ function saveDraft(
       draftChanged: true,
       timestamp,
     });
-    window.Signal.Data.updateConversation(conversation.attributes);
+    drop(DataWriter.updateConversation(conversation.attributes));
   }
 }
 

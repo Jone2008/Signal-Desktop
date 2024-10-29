@@ -80,11 +80,11 @@
   "icu:databaseError__startOldVersion": {
     "messageformat": "La versió de la teva base de dades no coincideix amb aquesta versió de Signal. Assegura't d'estar obrint la versió més recent de Signal al teu ordinador."
   },
-  "icu:databaseError__recover__detail": {
-    "messageformat": "A database error occurred. You can copy the error and contact Signal support to help fix the issue. If you need to use Signal right away, you can attempt to recover your data.\n\nContact support by visiting: {link}"
+  "icu:databaseError__safeStorageBackendChange": {
+    "messageformat": "No es pot accedir a la clau de codificació de la base de dades perquè la codificació del clauer del back-end del sistema operatiu ha canviat de {previousBackend} a {currentBackend}. Això pot passar si l'entorn d'escriptori canvia, per exemple, entre GNOME i KDE.\n\nTorna a l'entorn d'escriptori anterior."
   },
-  "icu:databaseError__recover__button": {
-    "messageformat": "Recover data"
+  "icu:databaseError__safeStorageBackendChangeWithPreviousFlag": {
+    "messageformat": "No es pot accedir a la clau de codificació de la base de dades perquè la codificació del clauer del back-end del sistema operatiu ha canviat de {previousBackend} a {currentBackend}. Això pot passar si l'entorn d'escriptori canvia, per exemple, entre GNOME i KDE.\n\nTorna a l’entorn d’escriptori anterior, o prova d’executar Signal amb el paràmetre de la línia d’ordres --password-store=\"{previousBackendFlag}\""
   },
   "icu:mainMenuFile": {
     "messageformat": "&Fitxer"
@@ -575,8 +575,11 @@
   "icu:decryptionErrorToast": {
     "messageformat": "L'escriptori ha tingut un error de desencriptació de {name}, dispositiu {deviceId}"
   },
-  "icu:decryptionErrorToastAction": {
+  "icu:Toast__ActionLabel--SubmitLog": {
     "messageformat": "Envia el registre"
+  },
+  "icu:Toast--FailedToSendWithEndorsements": {
+    "messageformat": "Failed to send message with endorsements"
   },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "No pots seleccionar fotos i vídeos juntament amb arxius."
@@ -785,8 +788,14 @@
   "icu:attachmentSaved": {
     "messageformat": "Adjunt desat"
   },
+  "icu:attachmentSavedPlural": {
+    "messageformat": "{count, plural, one {Attachment saved} other {{count,number} attachments saved}}"
+  },
   "icu:attachmentSavedShow": {
     "messageformat": "Mostra'l a la carpeta"
+  },
+  "icu:attachmentStillDownloading": {
+    "messageformat": "{count, plural, one {Can't save attachment, since it hasn't finished downloading yet} other {Can't save attachments, since {count,number} haven't finished downloading yet}}"
   },
   "icu:you": {
     "messageformat": "Vós"
@@ -821,11 +830,11 @@
   "icu:mute": {
     "messageformat": "Silenciats"
   },
-  "icu:cannotUpdateDetail": {
-    "messageformat": "El Signal Desktop no es pot actualitzar. {retry} o visiteu {url} per a instal·lar la versió nova manualment. Després, {support} sobre aquest problema."
+  "icu:cannotUpdateDetail-v2": {
+    "messageformat": "Signal no s'ha pogut actualitzar. <retryUpdateButton>Prova de tornar-lo a actualitzar</retryUpdateButton>, o ves a {url} per instal·lar-lo manualment. Després, <contactSupportLink>posa't en contacte amb el servei d'assistència</contactSupportLink> per informar d'aquest problema"
   },
-  "icu:cannotUpdateRequireManualDetail": {
-    "messageformat": "El Signal no s'ha pogut actualitzar. Visiteu {url} per instal·lar-lo manualment. Aleshores, {support} sobre aquest problema."
+  "icu:cannotUpdateRequireManualDetail-v2": {
+    "messageformat": "Signal no s'ha pogut actualitzar. Ves a {url} per instal·lar-lo manualment. Després, <contactSupportLink>posa't en contacte amb el servei d'assistència</contactSupportLink> per informar d'aquest problema"
   },
   "icu:readOnlyVolume": {
     "messageformat": "El Signal Desktop es troba probablement en una quarentena de macOS i no es podrà actualitzar automàticament. Proveu de moure  {app} a  {folder} amb el Finder."
@@ -938,8 +947,8 @@
   "icu:NotePreviewModal__Title": {
     "messageformat": "Nota"
   },
-  "icu:viewRecentMedia": {
-    "messageformat": "Mostra el contingut recent"
+  "icu:allMediaMenuItem": {
+    "messageformat": "Tot el contingut"
   },
   "icu:back": {
     "messageformat": "Enrere"
@@ -997,6 +1006,18 @@
   },
   "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description-with-sync": {
     "messageformat": "Tots els missatges d'aquest xat s'eliminaran dels teus dispositius. Encara podràs cercar aquest xat després d'haver eliminat els missatges."
+  },
+  "icu:deleteConversation": {
+    "messageformat": "Suprimeix"
+  },
+  "icu:ConversationHeader__DeleteConversationConfirmation__title": {
+    "messageformat": "Vols eliminar el xat?"
+  },
+  "icu:ConversationHeader__DeleteConversationConfirmation__description": {
+    "messageformat": "Tots els missatges d'aquest xat s'eliminaran del dispositiu."
+  },
+  "icu:ConversationHeader__DeleteConversationConfirmation__description-with-sync": {
+    "messageformat": "Tots els missatges d'aquest xat s'eliminaran de tots els teus dispositius."
   },
   "icu:ConversationHeader__ContextMenu__LeaveGroupAction__title": {
     "messageformat": "Sortir del grup"
@@ -1101,7 +1122,7 @@
     "messageformat": "Dispositius enllaçats"
   },
   "icu:linkNewDevice": {
-    "messageformat": "Enllaça un dispositiu nou"
+    "messageformat": "Vincular un nou dispositiu"
   },
   "icu:Install__learn-more": {
     "messageformat": "Més informació"
@@ -1119,10 +1140,7 @@
     "messageformat": "Configuració"
   },
   "icu:Install__instructions__3": {
-    "messageformat": "Toqueu {plusButton} (Android) o {linkNewDevice} (iPhone)"
-  },
-  "icu:Install__qr-failed-load": {
-    "messageformat": "No s'ha pogut carregar el codi QR. Comprova la connexió a Internet i torna-ho a provar. <retry>Tornar a provar-ho</retry>"
+    "messageformat": "Toca {linkNewDevice}"
   },
   "icu:Install__qr-failed-load__error--timeout": {
     "messageformat": "No s'ha pogut carregar el codi QR. Comprova la connexió i torna-ho a provar."
@@ -1197,10 +1215,10 @@
     "messageformat": "Torna a trucar"
   },
   "icu:calling__join": {
-    "messageformat": "Afegeix-me a la trucada"
+    "messageformat": "Unir-me a la trucada"
   },
   "icu:calling__return": {
-    "messageformat": "Torna a la trucada"
+    "messageformat": "Tornar a la trucada"
   },
   "icu:calling__lobby-automatically-muted-because-there-are-a-lot-of-people": {
     "messageformat": "S'ha silenciat el micròfon a causa de la mida de la trucada."
@@ -1214,9 +1232,6 @@
   "icu:calling__cant-join": {
     "messageformat": "No pots unir-te a la trucada"
   },
-  "icu:calling__dialog-already-in-call": {
-    "messageformat": "Ja estàs en una trucada."
-  },
   "icu:calling__call-link-connection-issues": {
     "messageformat": "No s'ha pogut obtenir la informació de l'enllaç de trucada. Comprova la connexió de xarxa i torna-ho a provar."
   },
@@ -1228,6 +1243,9 @@
   },
   "icu:calling__call-link-default-title": {
     "messageformat": "Trucada del Signal"
+  },
+  "icu:calling__call-link-delete-failed": {
+    "messageformat": "No es pot eliminar l'enllaç. Comprova la connexió i torna-ho a provar."
   },
   "icu:calling__join-request-denied": {
     "messageformat": "S'ha denegat la teva sol·licitud per unir-te a la trucada."
@@ -1400,20 +1418,20 @@
   "icu:calling__in-this-call": {
     "messageformat": "{people, plural, one {En aquesta trucada · {people,number} persona} other {En aquesta trucada: {people,number} persones}}"
   },
-  "icu:calling__you-have-blocked": {
-    "messageformat": "Has bloquejat a {name}"
-  },
   "icu:calling__blocked-participant": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "{name} està bloquejat."
   },
   "icu:calling__block-info-title": {
-    "messageformat": "{name} is blocked"
+    "messageformat": "{name} està bloquejat."
   },
   "icu:calling__block-info": {
-    "messageformat": "You won’t receive their audio or video and they won’t receive yours."
+    "messageformat": "No en rebreu àudio ni vídeo ni rebran el vostre."
   },
   "icu:calling__missing-media-keys": {
     "messageformat": "No es pot rebre ni àudio ni vídeo de {name}."
+  },
+  "icu:calling__missing-media-keys--unknown-contact": {
+    "messageformat": "No es pot rebre ni àudio ni vídeo"
   },
   "icu:calling__missing-media-keys-info": {
     "messageformat": "Això pot ser degut al fet que no han verificat el canvi del teu número de seguretat, hi ha un problema al seu dispositiu o t'han bloquejat."
@@ -1438,6 +1456,9 @@
   },
   "icu:calling__presenting--info": {
     "messageformat": "El Signal comparteix {window}."
+  },
+  "icu:calling__presenting--info--unknown": {
+    "messageformat": "La funció compartir pantalla de Signal està activada"
   },
   "icu:calling__presenting--reconnecting": {
     "messageformat": "Tornant a connectar…"
@@ -1621,6 +1642,9 @@
   },
   "icu:timestampFormat__long--yesterday": {
     "messageformat": "Ahir {time}"
+  },
+  "icu:messageLoop": {
+    "messageformat": "És possible que Signal no processi un missatge entrant."
   },
   "icu:messageBodyTooLong": {
     "messageformat": "El cos del missatge és massa llarg."
@@ -1834,9 +1858,6 @@
   },
   "icu:autoUpdateRetry": {
     "messageformat": "Torneu a intentar d'actualitzar"
-  },
-  "icu:autoUpdateContactSupport": {
-    "messageformat": "contacteu amb l'assistència"
   },
   "icu:autoUpdateNewVersionMessage": {
     "messageformat": "Cliqueu per a reiniciar el Signal"
@@ -2625,10 +2646,10 @@
     "messageformat": "Rebutja"
   },
   "icu:declinedIncomingAudioCall": {
-    "messageformat": "Has rebutjat una trucada"
+    "messageformat": "Trucada de veu rebutjada"
   },
   "icu:declinedIncomingVideoCall": {
-    "messageformat": "Heu rebutjat una trucada de vídeo"
+    "messageformat": "Videotrucada rebutjada"
   },
   "icu:acceptedIncomingAudioCall": {
     "messageformat": "Trucada entrant"
@@ -2661,10 +2682,10 @@
     "messageformat": "Signal continuarà enviant notificacions. Podeu canviar-ho als Ajustos de Signal."
   },
   "icu:incomingAudioCall": {
-    "messageformat": "Trucada entrant…"
+    "messageformat": "Trucada entrant"
   },
   "icu:incomingVideoCall": {
-    "messageformat": "Trucada de vídeo entrant…"
+    "messageformat": "Trucada de vídeo entrant"
   },
   "icu:outgoingAudioCall": {
     "messageformat": "Trucada sortint"
@@ -2709,10 +2730,13 @@
     "messageformat": "{count, plural, one {{count,number} persona} other {{count,number} persones}}"
   },
   "icu:CallControls__InfoDisplay--audio-call": {
-    "messageformat": "Trucada"
+    "messageformat": "Trucada de veu"
   },
   "icu:CallControls__InfoDisplay--adhoc-call": {
     "messageformat": "Enllaç de trucada"
+  },
+  "icu:CallControls__InfoDisplay--group-call": {
+    "messageformat": "Trucada de grup"
   },
   "icu:CallControls__InfoDisplay--adhoc-join-request-pending": {
     "messageformat": "Esperant per a entrar"
@@ -2772,16 +2796,16 @@
     "messageformat": "{people, plural, one {{people,number} a la trucada} other {{people,number} a la trucada}}"
   },
   "icu:calling__call-notification__ended": {
-    "messageformat": "La trucada ha acabat"
+    "messageformat": "La videotrucada ha finalitzat"
   },
   "icu:calling__call-notification__started-by-someone": {
-    "messageformat": "S'ha iniciat una trucada de grup."
+    "messageformat": "S'ha iniciat una videotrucada"
   },
   "icu:calling__call-notification__started-by-you": {
-    "messageformat": "Heu iniciat una trucada de grup."
+    "messageformat": "Has iniciat una videotrucada"
   },
   "icu:calling__call-notification__started": {
-    "messageformat": "{name} ha iniciat una trucada de grup."
+    "messageformat": "{name} ha iniciat una videotrucada"
   },
   "icu:calling__in-another-call-tooltip": {
     "messageformat": "Ja sou en una trucada."
@@ -2970,7 +2994,7 @@
     "messageformat": "No pots afegir-t'hi mitjançant l'enllaç de grup perquè un administrador t'ha esborrat."
   },
   "icu:GroupV2--join--prompt-with-approval": {
-    "messageformat": "Un administrador d'aquest grup ha d'aprovar la sol·licitud abans de poder-vos-hi afegir. Si s'aprova, el vostre nom i la fotografia es compartiran amb els seus membres."
+    "messageformat": "Un administrador d'aquest grup ha d'aprovar la sol·licitud abans de poder-vos afegir-hi. Quan demaneu afegir-vos-hi, el vostre nom i la fotografia es compartiran amb els seus membres."
   },
   "icu:GroupV2--join--join-button": {
     "messageformat": "Afegeix-m'hi"
@@ -3347,11 +3371,8 @@
   "icu:GroupV2--admin-approval-remove-one--other--unknown": {
     "messageformat": "S'ha rebutjat la sol·licitud de {joinerName} per afegir-se al grup."
   },
-  "icu:GroupV2--admin-approval-bounce--one": {
-    "messageformat": "{joinerName} han sol·licitat i cancel·lat la sol·licitud per afegir-s'hi mitjançant l'enllaç del grup."
-  },
-  "icu:GroupV2--admin-approval-bounce": {
-    "messageformat": "{joinerName} han sol·licitat i cancel·lat {numberOfRequests,number} sol·licituds per afegir-s'hi mitjançant l'enllaç del grup."
+  "icu:GroupV2--admin-approval-bounce--pluralized": {
+    "messageformat": "{numberOfRequests, plural, one {{joinerName} ha sol·licitat i cancel·lat la seva sol·licitud per afegir-s'hi mitjançant l'enllaç del grup.} other {{joinerName} ha sol·licitat i cancel·lat {numberOfRequests,number} sol·licituds per afegir-s'hi mitjançant l'enllaç del grup.}}"
   },
   "icu:GroupV2--group-link-add--disabled--you": {
     "messageformat": "Heu activat l'enllaç de grup amb l'aprovació de l'administrador desactivada."
@@ -3527,6 +3548,93 @@
   "icu:BadgeSustainerInstructions__instructions__3": {
     "messageformat": "Toca sobre \"Fer donació a Signal\" per a subscriure't"
   },
+  "icu:BackupImportScreen__title": {
+    "messageformat": "Sincronitzant missatges"
+  },
+  "icu:BackupImportScreen__progressbar-hint": {
+    "messageformat": "Descarregant {currentSize} de {totalSize} ({fractionComplete,number,percent})…"
+  },
+  "icu:BackupImportScreen__progressbar-hint--processing": {
+    "messageformat": "Finalitzant la transferència de missatges…"
+  },
+  "icu:BackupImportScreen__progressbar-hint--preparing": {
+    "messageformat": "Preparant per descarregar…"
+  },
+  "icu:BackupImportScreen__description": {
+    "messageformat": "En funció de la mida de la teva còpia de seguretat, això pot trigar uns quants minuts."
+  },
+  "icu:BackupImportScreen__cancel": {
+    "messageformat": "Cancel·lar la transferència"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__title": {
+    "messageformat": "Cancel·lar la transferència?"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__body": {
+    "messageformat": "No s'ha completat la restauració dels teus missatges i arxius multimèdia. Si decideixes cancel·lar, podràs tornar-los a transferir des d'Ajustos."
+  },
+  "icu:BackupImportScreen__cancel-confirmation__cancel": {
+    "messageformat": "Continuar la transferència"
+  },
+  "icu:BackupImportScreen__cancel-confirmation__confirm": {
+    "messageformat": "Cancel·lar la transferència"
+  },
+  "icu:BackupImportScreen__error__title": {
+    "messageformat": "S'ha produït un error en transferir els teus missatges"
+  },
+  "icu:BackupImportScreen__error__body": {
+    "messageformat": "No s'han pogut transferir els teus missatges. Comprova la connexió a Internet i torna-ho a provar."
+  },
+  "icu:BackupImportScreen__error__confirm": {
+    "messageformat": "Torna a provar-ho"
+  },
+  "icu:BackupImportScreen__skip": {
+    "messageformat": "Omet"
+  },
+  "icu:BackupImportScreen__skip-confirmation__title": {
+    "messageformat": "Ometre la transferència de missatges?"
+  },
+  "icu:BackupImportScreen__skip-confirmation__body": {
+    "messageformat": "Si decideixes ometre aquest pas, no podràs accedir a cap dels teus missatges o arxius multimèdia des d'aquest dispositiu. Pots iniciar una nova transferència després d'haver-la omès des d'Ajustos > Xats > Transferència."
+  },
+  "icu:BackupImportScreen__skip-confirmation__cancel": {
+    "messageformat": "Cancel·la"
+  },
+  "icu:BackupMediaDownloadProgress__title-in-progress": {
+    "messageformat": "Restaurant els arxius"
+  },
+  "icu:BackupMediaDownloadProgress__title-paused": {
+    "messageformat": "Restauració interrompuda"
+  },
+  "icu:BackupMediaDownloadProgress__button-pause": {
+    "messageformat": "Pausar la transferència"
+  },
+  "icu:BackupMediaDownloadProgress__button-resume": {
+    "messageformat": "Reprendre la transferència"
+  },
+  "icu:BackupMediaDownloadProgress__button-cancel": {
+    "messageformat": "Cancel·lar la transferència"
+  },
+  "icu:BackupMediaDownloadProgress__button-more": {
+    "messageformat": "Més opcions"
+  },
+  "icu:BackupMediaDownloadProgress__title-complete": {
+    "messageformat": "Restauració completa"
+  },
+  "icu:BackupMediaDownloadProgress__progressbar-hint": {
+    "messageformat": "{currentSize} de {totalSize}"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__title": {
+    "messageformat": "Cancel·lar la transferència d'arxius?"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__description": {
+    "messageformat": "No s'ha completat la restauració dels teus missatges i arxius multimèdia. Si decideixes cancel·lar, podràs tornar-los a transferir des d'Ajustos."
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-continue": {
+    "messageformat": "Continuar la transferència"
+  },
+  "icu:BackupMediaDownloadCancelConfirmation__button-confirm-cancel": {
+    "messageformat": "Cancel·lar la transferència"
+  },
   "icu:CompositionArea--expand": {
     "messageformat": "Expandeix"
   },
@@ -3575,8 +3683,8 @@
   "icu:ContactModal--remove-from-group": {
     "messageformat": "Esborra del grup"
   },
-  "icu:ContactModal--already-in-call": {
-    "messageformat": "Ja ets a una trucada."
+  "icu:ContactModal--voice": {
+    "messageformat": "Veu"
   },
   "icu:showChatColorEditor": {
     "messageformat": "Color del xat"
@@ -3759,7 +3867,7 @@
     "messageformat": "Restableix l'enllaç"
   },
   "icu:GroupLinkManagement--approve-label": {
-    "messageformat": "Aproveu membres nous"
+    "messageformat": "Sol·licitar l'aprovació de l'administrador"
   },
   "icu:GroupLinkManagement--approve-info": {
     "messageformat": "Requereix que un administrador aprovi els membres nous que s’afegeixin per l’enllaç del grup."
@@ -3947,11 +4055,11 @@
   "icu:MessageAudio--playbackRatep5": {
     "messageformat": "0,5"
   },
-  "icu:emptyInboxMessage": {
-    "messageformat": "Cliqueu el {composeIcon} i cerqueu contactes i grups a qui enviar missatges."
+  "icu:emptyInbox__title": {
+    "messageformat": "No hi ha xats"
   },
-  "icu:composeIcon": {
-    "messageformat": "botó per a escriure"
+  "icu:emptyInbox__subtitle": {
+    "messageformat": "Els xats recents apareixeran aquí."
   },
   "icu:ForwardMessageModal__title": {
     "messageformat": "Reenvia a"
@@ -4378,6 +4486,12 @@
   },
   "icu:ProfileEditorModal--error": {
     "messageformat": "No s'ha pogut actualitzar el perfil. Torneu-ho a provar més tard."
+  },
+  "icu:ProfileEditor__invalid-about__title": {
+    "messageformat": "Caràcters no vàlids"
+  },
+  "icu:ProfileEditor__invalid-about__body": {
+    "messageformat": "Un o més caràcters que has introduït no es poden utilitzar. Torna a provar-ho."
   },
   "icu:AnnouncementsOnlyGroupBanner--modal": {
     "messageformat": "Envia un missatge a un administrador"
@@ -4841,6 +4955,12 @@
   "icu:Stories__list-empty": {
     "messageformat": "Ara no hi ha històries per veure"
   },
+  "icu:Stories__list__empty--title": {
+    "messageformat": "No hi ha històries"
+  },
+  "icu:Stories__list__empty--subtitle": {
+    "messageformat": "Les actualitzacions apareixeran aquí."
+  },
   "icu:Stories__list--sending": {
     "messageformat": "Enviant…"
   },
@@ -4855,6 +4975,9 @@
   },
   "icu:Stories__placeholder--text": {
     "messageformat": "Cliqueu per veure la història"
+  },
+  "icu:Stories__placeholder-with-icon--text-2": {
+    "messageformat": "Fes clic a <newStoryButtonIcon> </newStoryButtonIcon>per afegir una actualització."
   },
   "icu:Stories__from-to-group": {
     "messageformat": "{name} a {group}"
@@ -5096,7 +5219,10 @@
   "icu:StoryViewsNRepliesModal__tab--replies": {
     "messageformat": "Respostes"
   },
-  "icu:StoryViewsNRepliesModal__reacted": {
+  "icu:StoryViewsNRepliesModal__reacted--you": {
+    "messageformat": "Ha reaccionat a la història"
+  },
+  "icu:StoryViewsNRepliesModal__reacted--someone-else": {
     "messageformat": "Ha reaccionat a la història"
   },
   "icu:StoryViewsNRepliesModal__not-a-member": {
@@ -5115,7 +5241,7 @@
     "messageformat": "Història"
   },
   "icu:StoryListItem__unhide": {
-    "messageformat": "Mostra les històries"
+    "messageformat": "Mostra la història"
   },
   "icu:StoryListItem__hide": {
     "messageformat": "Amaga la història"
@@ -5386,7 +5512,10 @@
     "messageformat": "Netejar l'historial de trucades?"
   },
   "icu:CallsTab__ConfirmClearCallHistory__Body": {
-    "messageformat": "S'eliminarà de manera permanent tot l'historial de trucades"
+    "messageformat": "S'eliminarà de manera permanent tot l'historial de trucades."
+  },
+  "icu:CallsTab__ConfirmClearCallHistory__Body--call-links": {
+    "messageformat": "S'eliminarà de manera permanent tot l'historial de trucades. Els enllaços de trucada que hagis creat ja no funcionaran per a les persones que els tinguin. "
   },
   "icu:CallsTab__ConfirmClearCallHistory__ConfirmButton": {
     "messageformat": "Neteja"
@@ -5394,8 +5523,14 @@
   "icu:CallsTab__ToastCallHistoryCleared": {
     "messageformat": "S'ha buidat l'històric de trucades"
   },
-  "icu:CallsTab__EmptyStateText": {
-    "messageformat": "Fes clic per veure o iniciar una trucada"
+  "icu:CallsTab__ClearCallHistoryError--call-links": {
+    "messageformat": "No s'han pogut eliminar tots els enllaços de trucada. Comprova la connexió i torna-ho a provar."
+  },
+  "icu:CallsTab__ClearCallHistoryError": {
+    "messageformat": "No s'ha pogut eliminar tot l'historial de trucades. Comprova la connexió i torna-ho a provar."
+  },
+  "icu:CallsTab__EmptyStateText--with-icon-2": {
+    "messageformat": "Fes clic a <newCallButtonIcon></newCallButtonIcon> per iniciar una nova trucada de veu o vídeo."
   },
   "icu:CallsList__SearchInputPlaceholder": {
     "messageformat": "Cerca"
@@ -5406,8 +5541,17 @@
   "icu:CallsList__ToggleFilterByMissed__RoleDescription": {
     "messageformat": "Commuta"
   },
-  "icu:CallsList__EmptyState--noQuery": {
-    "messageformat": "No hi ha cap trucada recent. Comença trucant a algú."
+  "icu:CallsList__EmptyState--noQuery__title": {
+    "messageformat": "Cap trucada"
+  },
+  "icu:CallsList__EmptyState--noQuery__subtitle": {
+    "messageformat": "Les trucades recents apareixeran aquí."
+  },
+  "icu:CallsList__EmptyState--noQuery--missed__title": {
+    "messageformat": "No hi ha trucades perdudes"
+  },
+  "icu:CallsList__EmptyState--noQuery--missed__subtitle": {
+    "messageformat": "Les trucades perdudes apareixeran aquí."
   },
   "icu:CallsList__EmptyState--hasQuery": {
     "messageformat": "No s'ha trobat cap resultat per a «{query}»"
@@ -5424,8 +5568,8 @@
   "icu:CallsList__ItemCallInfo--Missed": {
     "messageformat": "Perduda"
   },
-  "icu:CallsList__ItemCallInfo--GroupCall": {
-    "messageformat": "Trucada de grup"
+  "icu:CallsList__ItemCallInfo--Declined": {
+    "messageformat": "Rebutjada"
   },
   "icu:CallsList__ItemCallInfo--CallLink": {
     "messageformat": "Enllaç de trucada"
@@ -5437,7 +5581,7 @@
     "messageformat": "Vols sortir de la trucada actual?"
   },
   "icu:CallsList__LeaveCallDialogBody": {
-    "messageformat": "Has de sortir de la trucada actual abans d'unir-te a una nova trucada."
+    "messageformat": "Has de sortir de la trucada actual abans de començar-ne o unir-te a una de nova."
   },
   "icu:CallsList__LeaveCallDialogButton--leave": {
     "messageformat": "Surt de la trucada"
@@ -5451,32 +5595,59 @@
   "icu:CallsNewCallButton--return": {
     "messageformat": "Torna"
   },
-  "icu:CallsNewCallButtonTooltip--in-another-call": {
-    "messageformat": "Has de sortir de la trucada actual abans d'unir-te a una nova trucada"
-  },
-  "icu:CallHistory__Description--Default": {
-    "messageformat": "{type, select, Audio {{direction, select, Outgoing {Trucada sortint} other {Trucada entrant}}} Video {{direction, select, Outgoing {Trucada de vídeo sortint} other {Trucada de vídeo entrant}}} Group {{direction, select, Outgoing {Trucada grupal sortint} other {Trucada grupal entrant}}} other {{direction, select, Outgoing {Telefonada feta} other {Telefonada rebuda}}}}"
-  },
-  "icu:CallHistory__Description--Missed": {
-    "messageformat": "{type, select, Audio {Trucada perduda} Video {Trucada de vídeo perduda} Group {Trucada grupal perduda} other {Telefonada perduda}}"
-  },
-  "icu:CallHistory__Description--Unanswered": {
-    "messageformat": "{type, select, Audio {Trucada sense contestar} Video {Trucada de vídeo sense contestar} Group {Trucada de grup sense contestar} other {Trucada sense contestar}}"
-  },
-  "icu:CallHistory__Description--Declined": {
-    "messageformat": "{type, select, Audio {Trucada de veu rebutjada} Video {Videotrucada rebutjada} Group {Trucada de grup rebutjada} other {Trucada rebutjada}}"
-  },
   "icu:CallHistory__Description--Adhoc": {
     "messageformat": "Enllaç de trucada"
   },
+  "icu:CallHistory__DescriptionVideoCall--Default": {
+    "messageformat": "{direction, select, Outgoing {Trucada de vídeo sortint} other {Trucada de vídeo entrant}}"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Missed": {
+    "messageformat": "Trucada de vídeo perduda"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Unanswered": {
+    "messageformat": "Trucada de vídeo sense contestar"
+  },
+  "icu:CallHistory__DescriptionVideoCall--Declined": {
+    "messageformat": "Videotrucada rebutjada"
+  },
   "icu:CallLinkDetails__Join": {
     "messageformat": "Afegeix-m'hi"
+  },
+  "icu:CallLinkDetails__AddCallNameLabel": {
+    "messageformat": "Afegir nom de trucada"
+  },
+  "icu:CallLinkDetails__EditCallNameLabel": {
+    "messageformat": "Editar nom de trucada"
+  },
+  "icu:CallLinkDetails__ApproveAllMembersLabel": {
+    "messageformat": "Sol·licitar l'aprovació de l'administrador"
+  },
+  "icu:CallLinkDetails__SettingTooltip--disabled-for-active-call": {
+    "messageformat": "Aquesta configuració no es pot canviar mentre la trucada està activa"
   },
   "icu:CallLinkDetails__CopyLink": {
     "messageformat": "Copiar l'enllaç"
   },
   "icu:CallLinkDetails__ShareLinkViaSignal": {
     "messageformat": "Compartir enllaç per Signal"
+  },
+  "icu:CallLinkDetails__DeleteLink": {
+    "messageformat": "Eliminar enllaç"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Title": {
+    "messageformat": "Eliminar l'enllaç de trucada?"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Body": {
+    "messageformat": "Aquest enllaç ja no funcionarà per a ningú."
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Cancel": {
+    "messageformat": "Cancel·la"
+  },
+  "icu:CallLinkDetails__DeleteLinkModal__Delete": {
+    "messageformat": "Suprimeix"
+  },
+  "icu:CallLinkDetails__DeleteLinkTooltip--disabled-for-active-call": {
+    "messageformat": "Aquest enllaç no es pot eliminar mentre la trucada està activa"
   },
   "icu:CallLinkEditModal__Title": {
     "messageformat": "Detalls de l'enllaç de trucada"
@@ -5487,17 +5658,29 @@
   "icu:CallLinkEditModal__AddCallNameLabel": {
     "messageformat": "Afegir nom de trucada"
   },
-  "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
-    "messageformat": "Aprovar tots els membres"
+  "icu:CallLinkEditModal__EditCallNameLabel": {
+    "messageformat": "Editar nom de trucada"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--Off": {
+  "icu:CallLinkEditModal__InputLabel--ApproveAllMembers": {
+    "messageformat": "Sol·licitar l'aprovació de l'administrador"
+  },
+  "icu:CallLinkPendingParticipantModal__ApproveButtonLabel": {
+    "messageformat": "Aprovar l'entrada"
+  },
+  "icu:CallLinkPendingParticipantModal__DenyButtonLabel": {
+    "messageformat": "Denegar l'entrada"
+  },
+  "icu:CallLinkRestrictionsSelect__Option--Off": {
     "messageformat": "Inactiu"
   },
-  "icu:CallLinkEditModal__ApproveAllMembers__Option--On": {
+  "icu:CallLinkRestrictionsSelect__Option--On": {
     "messageformat": "Actiu"
   },
   "icu:CallLinkAddNameModal__Title": {
     "messageformat": "Afegir nom de trucada"
+  },
+  "icu:CallLinkAddNameModal__Title--Edit": {
+    "messageformat": "Editar nom de trucada"
   },
   "icu:CallLinkAddNameModal__NameLabel": {
     "messageformat": "Nom de trucada"
@@ -5542,10 +5725,22 @@
     "messageformat": "Petits ajustos, correccions d'errors i tasques de millora de rendiment. Gràcies per utilitzar Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.16--0": {
-    "messageformat": "Hem corregit un error que impedia que el botó per minimitzar una trucada aparegués mentre aquesta es tornava a connectar."
+  "icu:WhatsNew__v7.29--0": {
+    "messageformat": "Aquesta actualització millora la velocitat d'inici en aproximadament un 5 %."
   },
-  "icu:WhatsNew__v7.17--0": {
-    "messageformat": "We wanted things to be slicker and quicker for sticker clickers, so we fixed a bug that sometimes prevented Signal from launching the sticker viewer if you tried to open a sticker pack link while the app was closed."
+  "icu:WhatsNew__v7.30--header": {
+    "messageformat": "Presentem els enllaços de trucada: la peça que faltava a les invitacions de calendari i reunions improvisades."
+  },
+  "icu:WhatsNew__v7.30--0": {
+    "messageformat": "Ara pots crear ràpidament un enllaç perquè qualsevol persona a Signal pugui unir-se a una trucada grupal, sense necessitat d'unir-se prèviament a un xat grupal de Signal."
+  },
+  "icu:WhatsNew__v7.30--1": {
+    "messageformat": "Els enllaços de trucada son reutilitzables i ideals tant per a quedades telefòniques recurrents amb la teva colla com per a les reunions setmanals amb els teus companys de feina."
+  },
+  "icu:WhatsNew__v7.30--2": {
+    "messageformat": "Pots administrar els teus enllaços de trucada, controlar els ajustos per aprovar sol·licituds i copiar enllaços des de la pestanya de trucades per compartir-los ràpidament."
+  },
+  "icu:WhatsNew__v7.31--0": {
+    "messageformat": "Now you can quickly download every photo in an album when you receive a message with multiple attachments. But if you were a gallery curator with impeccable taste in another life, you can still save them individually too. Thanks, <linkMajorMayer>@major-mayer</linkMajorMayer>!"
   }
 }

@@ -4,8 +4,12 @@
 import cloneDeep from 'lodash/cloneDeep';
 import { throttle } from 'lodash';
 import LRU from 'lru-cache';
-import type { MessageAttributesType } from '../model-types.d';
+import type {
+  MessageAttributesType,
+  ReadonlyMessageAttributesType,
+} from '../model-types.d';
 import type { MessageModel } from '../models/messages';
+import { DataReader, DataWriter } from '../sql/Client';
 import * as Errors from '../types/errors';
 import * as log from '../logging/log';
 import { getEnvironment, Environment } from '../environment';
@@ -13,7 +17,6 @@ import { getMessageConversation } from '../util/getMessageConversation';
 import { getMessageModelLogger } from '../util/MessageModelLogger';
 import { getSenderIdentifier } from '../util/getSenderIdentifier';
 import { isNotNil } from '../util/isNotNil';
-import { map } from '../util/iterables';
 import { softAssert, strictAssert } from '../util/assert';
 import { isStory } from '../messages/helpers';
 import type { SendStateByConversationId } from '../messages/MessageSendState';
@@ -152,9 +155,8 @@ export class MessageCache {
 
     let messageAttributesFromDatabase: MessageAttributesType | undefined;
     try {
-      messageAttributesFromDatabase = await window.Signal.Data.getMessageById(
-        messageId
-      );
+      messageAttributesFromDatabase =
+        await DataReader.getMessageById(messageId);
     } catch (err: unknown) {
       log.error(
         `MessageCache.resolveAttributes(${messageId}): db error ${Errors.toLogFormat(
@@ -260,7 +262,7 @@ export class MessageCache {
       return;
     }
 
-    return window.Signal.Data.saveMessage(nextMessageAttributes, {
+    return DataWriter.saveMessage(nextMessageAttributes, {
       ourAci: window.textsecure.storage.user.getCheckedAci(),
     });
   }
@@ -451,11 +453,47 @@ export class MessageCache {
     return this.toModel(data);
   }
 
+  public async upgradeSchema(
+    attributes: MessageAttributesType,
+    minSchemaVersion: number
+  ): Promise<MessageAttributesType> {
+    const { schemaVersion } = attributes;
+    if (!schemaVersion || schemaVersion >= minSchemaVersion) {
+      return attributes;
+    }
+    const upgradedAttributes =
+      await window.Signal.Migrations.upgradeMessageSchema(attributes);
+    await this.setAttributes({
+      messageId: upgradedAttributes.id,
+      messageAttributes: upgradedAttributes,
+      skipSaveToDatabase: false,
+    });
+    return upgradedAttributes;
+  }
+
   // Finds a message in the cache by sentAt/timestamp
-  public __DEPRECATED$filterBySentAt(sentAt: number): Iterable<MessageModel> {
+  public async findBySentAt(
+    sentAt: number,
+    predicate: (attributes: ReadonlyMessageAttributesType) => boolean
+  ): Promise<MessageAttributesType | undefined> {
     const items = this.state.messageIdsBySentAt.get(sentAt) ?? [];
-    const attrs = items.map(id => this.accessAttributes(id)).filter(isNotNil);
-    return map(attrs, data => this.toModel(data));
+    const inMemory = items
+      .map(id => this.accessAttributes(id))
+      .filter(isNotNil)
+      .find(predicate);
+
+    if (inMemory != null) {
+      return inMemory;
+    }
+
+    log.info(`findBySentAt(${sentAt}): db lookup needed`);
+    const allOnDisk = await DataReader.getMessagesBySentAt(sentAt);
+    const onDisk = allOnDisk.find(predicate);
+
+    if (onDisk != null) {
+      this.addMessageToCache(onDisk);
+    }
+    return onDisk;
   }
 
   // Marks cached model as "should be stale" to discourage continued use.

@@ -27,13 +27,11 @@ import type * as Crypto from './Crypto';
 import type * as Curve from './Curve';
 import type * as RemoteConfig from './RemoteConfig';
 import type { OSType } from './util/os/shared';
-import type { getEnvironment } from './environment';
 import type { LocalizerType, ThemeType } from './types/Util';
 import type { Receipt } from './types/Receipt';
 import type { ConversationController } from './ConversationController';
 import type { ReduxActions } from './state/types';
 import type { createApp } from './state/roots/createApp';
-import type Data from './sql/Client';
 import type { MessageModel } from './models/messages';
 import type { ConversationModel } from './models/conversations';
 import type { BatcherType } from './util/batcher';
@@ -123,7 +121,7 @@ type PermissionsWindowPropsType = {
 
 type ScreenShareWindowPropsType = {
   onStopSharing: () => void;
-  presentedSourceName: string;
+  presentedSourceName: string | undefined;
   getStatus: () => ScreenShareStatus;
   setRenderCallback: (cb: () => void) => void;
 };
@@ -138,7 +136,6 @@ export type SignalCoreType = {
   AboutWindowProps?: AboutWindowPropsType;
   Crypto: typeof Crypto;
   Curve: typeof Curve;
-  Data: typeof Data;
   DebugLogWindowProps?: DebugLogWindowPropsType;
   Groups: typeof Groups;
   PermissionsWindowProps?: PermissionsWindowPropsType;
@@ -172,6 +169,10 @@ export type SignalCoreType = {
   };
   conversationControllerStart: () => void;
   challengeHandler?: ChallengeHandler;
+
+  // Only for debugging in Dev Tools
+  DataReader?: unknown;
+  DataWriter?: unknown;
 };
 
 declare global {
@@ -192,7 +193,6 @@ declare global {
     getConversations: () => ConversationModelCollectionType;
     getBuildCreation: () => number;
     getBuildExpiration: () => number;
-    getEnvironment: typeof getEnvironment;
     getHostName: () => string;
     getInteractionMode: () => 'mouse' | 'keyboard';
     getServerPublicParams: () => string;
@@ -305,6 +305,11 @@ declare global {
 
   interface SharedArrayBuffer {
     __arrayBuffer: never;
+  }
+
+  interface Set<T> {
+    // Needed until TS upgrade
+    difference<U>(other: ReadonlySet<U>): Set<T>;
   }
 }
 

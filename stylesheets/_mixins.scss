@@ -12,8 +12,17 @@
   }
   /* Farsi (Persian) */
   &:lang(fa) {
-    font-family: 'Vazirmatn', -apple-system, system-ui, BlinkMacSystemFont,
-      'Segoe UI', Tahoma, 'Noto Sans Arabic', Helvetica, Arial, sans-serif;
+    font-family:
+      'Vazirmatn',
+      -apple-system,
+      system-ui,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Tahoma,
+      'Noto Sans Arabic',
+      Helvetica,
+      Arial,
+      sans-serif;
   }
   /* Urdu */
   &:lang(ur) {
@@ -316,7 +325,9 @@ $rtl-icon-map: (
 // Other
 
 @mixin popper-shadow() {
-  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3), 0px 0px 8px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0px 8px 20px rgba(0, 0, 0, 0.3),
+    0px 0px 8px rgba(0, 0, 0, 0.05);
 
   @media (forced-colors: active) {
     border: 1px solid WindowText;
@@ -960,6 +971,53 @@ $rtl-icon-map: (
 
     @include dark-theme {
       border-top-color: $color-gray-80;
+    }
+  }
+}
+
+@mixin button-active-call {
+  $background: $color-accent-green;
+
+  @include font-body-2-bold;
+  @include rounded-corners;
+
+  display: flex;
+  width: auto;
+  align-items: center;
+  background-color: $background;
+  color: $color-white;
+  outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: none;
+
+  &:before {
+    $icon-size: 16px;
+
+    @include color-svg(
+      '../images/icons/v3/video/video-compact-fill.svg',
+      $color-white
+    );
+    content: '';
+    display: block;
+    height: $icon-size;
+    margin-inline-end: 4px;
+    min-width: $icon-size;
+    width: $icon-size;
+  }
+
+  &:not(:disabled) {
+    &:hover {
+      @include any-theme {
+        background-color: darken($background, 16%);
+      }
+    }
+
+    &:focus {
+      @include keyboard-mode {
+        background-color: darken($background, 16%);
+      }
     }
   }
 }

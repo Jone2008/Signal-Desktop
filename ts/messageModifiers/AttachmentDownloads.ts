@@ -29,9 +29,8 @@ export async function addAttachmentToMessage(
 
     try {
       if (attachment.path) {
-        const loaded = await window.Signal.Migrations.loadAttachmentData(
-          attachment
-        );
+        const loaded =
+          await window.Signal.Migrations.loadAttachmentData(attachment);
         attachmentData = loaded.data;
       }
 
@@ -65,7 +64,7 @@ export async function addAttachmentToMessage(
           return {
             ...edit,
             body: Bytes.toString(attachmentData),
-            bodyAttachment: undefined,
+            bodyAttachment: attachment,
           };
         });
 
@@ -97,7 +96,7 @@ export async function addAttachmentToMessage(
 
       message.set({
         body: Bytes.toString(attachmentData),
-        bodyAttachment: undefined,
+        bodyAttachment: attachment,
       });
     } finally {
       if (attachment.path) {

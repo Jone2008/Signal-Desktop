@@ -64,8 +64,10 @@ const MESSAGE_DEFAULT_PROPS = {
   pushPanelForConversation: shouldNeverBeCalled,
   renderAudioAttachment: () => <div />,
   saveAttachment: shouldNeverBeCalled,
+  saveAttachments: shouldNeverBeCalled,
   scrollToQuotedMessage: shouldNeverBeCalled,
   showConversation: noop,
+  showAttachmentDownloadStillInProgressToast: shouldNeverBeCalled,
   showExpiredIncomingTapToViewToast: shouldNeverBeCalled,
   showExpiredOutgoingTapToViewToast: shouldNeverBeCalled,
   showLightbox: shouldNeverBeCalled,
@@ -259,6 +261,7 @@ export function StoryViewsNRepliesModal({
                     })
               }
               platform={platform}
+              quotedMessageId={null}
               sendCounter={0}
               skinTone={skinTone ?? null}
               sortedGroupMembers={sortedGroupMembers ?? null}
@@ -571,7 +574,9 @@ function ReplyOrReactionMessage({
                   }
                 />
               </div>
-              {i18n('icu:StoryViewsNRepliesModal__reacted')}
+              {reply.author.isMe
+                ? i18n('icu:StoryViewsNRepliesModal__reacted--you')
+                : i18n('icu:StoryViewsNRepliesModal__reacted--someone-else')}
               <MessageTimestamp
                 i18n={i18n}
                 isRelativeTime
@@ -649,9 +654,9 @@ function ReplyOrReactionMessage({
 
   return reply.author.isMe && !reply.deletedForEveryone ? (
     <ContextMenu i18n={i18n} key={reply.id} menuOptions={menuOptions}>
-      {({ openMenu, menuNode }) => (
+      {({ onClick, menuNode }) => (
         <>
-          {renderContent(openMenu)}
+          {renderContent(onClick)}
           {menuNode}
         </>
       )}

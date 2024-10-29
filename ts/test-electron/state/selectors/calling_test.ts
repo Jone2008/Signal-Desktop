@@ -6,16 +6,17 @@ import { reducer as rootReducer } from '../../../state/reducer';
 import { noopAction } from '../../../state/ducks/noop';
 import { actions as userActions } from '../../../state/ducks/user';
 import {
-  CallMode,
   CallState,
   CallViewMode,
   GroupCallConnectionState,
   GroupCallJoinState,
 } from '../../../types/Calling';
+import { CallMode } from '../../../types/CallDisposition';
 import { generateAci } from '../../../types/ServiceId';
 import {
   getCallsByConversation,
   getCallSelector,
+  getHasAnyAdminCallLinks,
   getIncomingCall,
   isInCall,
 } from '../../../state/selectors/calling';
@@ -25,6 +26,10 @@ import type {
   GroupCallStateType,
 } from '../../../state/ducks/calling';
 import { getEmptyState } from '../../../state/ducks/calling';
+import {
+  FAKE_CALL_LINK,
+  FAKE_CALL_LINK_WITH_ADMIN_KEY,
+} from '../../../test-both/helpers/fakeCallLink';
 
 const OUR_ACI = generateAci();
 const ACI_1 = generateAci();
@@ -62,6 +67,7 @@ describe('state/selectors/calling', () => {
   const stateWithActiveDirectCall: CallingStateType = {
     ...stateWithDirectCall,
     activeCallState: {
+      state: 'Active',
       callMode: CallMode.Direct,
       conversationId: 'fake-direct-call-conversation-id',
       hasLocalAudio: true,
@@ -114,6 +120,20 @@ describe('state/selectors/calling', () => {
     ...getEmptyState(),
     callsByConversation: {
       'fake-group-call-conversation-id': incomingGroupCall,
+    },
+  };
+
+  const stateWithCallLink: CallingStateType = {
+    ...getEmptyState(),
+    callLinks: {
+      [FAKE_CALL_LINK.roomId]: FAKE_CALL_LINK,
+    },
+  };
+
+  const stateWithAdminCallLink: CallingStateType = {
+    ...getEmptyState(),
+    callLinks: {
+      [FAKE_CALL_LINK_WITH_ADMIN_KEY.roomId]: FAKE_CALL_LINK_WITH_ADMIN_KEY,
     },
   };
 
@@ -214,6 +234,24 @@ describe('state/selectors/calling', () => {
 
     it('should be true if we are in a call', () => {
       assert.isTrue(isInCall(getCallingState(stateWithActiveDirectCall)));
+    });
+  });
+
+  describe('getHasAnyAdminCallLinks', () => {
+    it('returns true with admin call links', () => {
+      assert.isTrue(
+        getHasAnyAdminCallLinks(getCallingState(stateWithAdminCallLink))
+      );
+    });
+
+    it('returns false with only non-admin call links', () => {
+      assert.isFalse(
+        getHasAnyAdminCallLinks(getCallingState(stateWithCallLink))
+      );
+    });
+
+    it('returns false without any call links', () => {
+      assert.isFalse(getHasAnyAdminCallLinks(getEmptyRootState()));
     });
   });
 });

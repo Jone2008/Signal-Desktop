@@ -18,7 +18,7 @@ import type { StateType as RootStateType } from '../reducer';
 
 import * as log from '../../logging/log';
 import { __DEPRECATED$getMessageById } from '../../messages/getMessageById';
-import type { MessageAttributesType } from '../../model-types.d';
+import type { ReadonlyMessageAttributesType } from '../../model-types.d';
 import { isGIF } from '../../types/Attachment';
 import {
   isImageTypeSupported,
@@ -39,7 +39,7 @@ import {
 } from './conversations';
 import { showStickerPackPreview } from './globalModals';
 import { useBoundActions } from '../../hooks/useBoundActions';
-import dataInterface from '../../sql/Client';
+import { DataReader } from '../../sql/Client';
 
 // eslint-disable-next-line local-rules/type-alias-readonlydeep
 export type LightboxStateType =
@@ -150,22 +150,6 @@ function setPlaybackDisabled(
   };
 }
 
-function showLightboxWithMedia(
-  selectedIndex: number | undefined,
-  media: ReadonlyArray<ReadonlyDeep<MediaItemType>>
-): ShowLightboxActionType {
-  return {
-    type: SHOW_LIGHTBOX,
-    payload: {
-      isViewOnce: false,
-      media,
-      selectedIndex,
-      hasPrevMessage: false,
-      hasNextMessage: false,
-    },
-  };
-}
-
 function showLightboxForViewOnceMedia(
   messageId: string
 ): ThunkAction<void, RootStateType, unknown, ShowLightboxActionType> {
@@ -224,9 +208,9 @@ function showLightboxForViewOnceMedia(
           attachments: message.get('attachments') || [],
           id: message.get('id'),
           conversationId: message.get('conversationId'),
-          received_at: message.get('received_at'),
-          received_at_ms: Number(message.get('received_at_ms')),
-          sent_at: message.get('sent_at'),
+          receivedAt: message.get('received_at'),
+          receivedAtMs: Number(message.get('received_at_ms')),
+          sentAt: message.get('sent_at'),
         },
       },
     ];
@@ -245,10 +229,10 @@ function showLightboxForViewOnceMedia(
 }
 
 function filterValidAttachments(
-  attributes: MessageAttributesType
+  attributes: ReadonlyMessageAttributesType
 ): Array<AttachmentType> {
   return (attributes.attachments ?? []).filter(
-    item => item.thumbnail && !item.pending && !item.error
+    item => !item.pending && !item.error
   );
 }
 
@@ -313,9 +297,9 @@ function showLightbox(opts: {
         attachments: message.get('attachments') || [],
         id: messageId,
         conversationId: authorId,
-        received_at: receivedAt,
-        received_at_ms: Number(message.get('received_at_ms')),
-        sent_at: sentAt,
+        receivedAt,
+        receivedAtMs: Number(message.get('received_at_ms')),
+        sentAt,
       },
       attachment: item,
       thumbnailObjectUrl:
@@ -349,7 +333,7 @@ function showLightbox(opts: {
     }
 
     const { older, newer } =
-      await dataInterface.getConversationRangeCenteredOnMessage({
+      await DataReader.getConversationRangeCenteredOnMessage({
         conversationId: message.get('conversationId'),
         messageId,
         receivedAt,
@@ -401,11 +385,7 @@ function showLightboxForAdjacentMessage(
     }
 
     const [media] = lightbox.media;
-    const {
-      id: messageId,
-      received_at: receivedAt,
-      sent_at: sentAt,
-    } = media.message;
+    const { id: messageId, receivedAt, sentAt } = media.message;
 
     const message = await __DEPRECATED$getMessageById(messageId);
     if (!message) {
@@ -436,8 +416,8 @@ function showLightboxForAdjacentMessage(
 
     const [adjacent] =
       direction === AdjacentMessageDirection.Previous
-        ? await dataInterface.getOlderMessagesByConversation(options)
-        : await dataInterface.getNewerMessagesByConversation(options);
+        ? await DataReader.getOlderMessagesByConversation(options)
+        : await DataReader.getNewerMessagesByConversation(options);
 
     if (!adjacent) {
       log.warn(
@@ -511,7 +491,6 @@ export const actions = {
   closeLightbox,
   showLightbox,
   showLightboxForViewOnceMedia,
-  showLightboxWithMedia,
   showLightboxForPrevMessage,
   showLightboxForNextMessage,
   setSelectedLightboxIndex,

@@ -4,6 +4,7 @@
 import { assert } from 'chai';
 import { v4 as uuid } from 'uuid';
 import type { MessageAttributesType } from '../../model-types.d';
+import { DataReader, DataWriter } from '../../sql/Client';
 import { MessageModel } from '../../models/messages';
 import { strictAssert } from '../../util/assert';
 
@@ -11,14 +12,20 @@ import { MessageCache } from '../../services/MessageCache';
 import { generateAci } from '../../types/ServiceId';
 
 describe('MessageCache', () => {
-  describe('filterBySentAt', () => {
-    it('returns an empty iterable if no messages match', () => {
+  beforeEach(async () => {
+    const ourAci = generateAci();
+    await window.textsecure.storage.put('uuid_id', `${ourAci}.1`);
+    await window.ConversationController.load();
+  });
+
+  describe('findBySentAt', () => {
+    it('returns an empty iterable if no messages match', async () => {
       const mc = new MessageCache();
 
-      assert.isEmpty([...mc.__DEPRECATED$filterBySentAt(123)]);
+      assert.isUndefined(await mc.findBySentAt(123, () => true));
     });
 
-    it('returns all messages that match the timestamp', () => {
+    it('returns all messages that match the timestamp', async () => {
       const mc = new MessageCache();
 
       let message1 = new MessageModel({
@@ -55,23 +62,15 @@ describe('MessageCache', () => {
       message2 = mc.__DEPRECATED$register(message2.id, message2, 'test');
       mc.__DEPRECATED$register(message3.id, message3, 'test');
 
-      const filteredMessages = Array.from(
-        mc.__DEPRECATED$filterBySentAt(1234)
-      ).map(x => x.attributes);
+      const filteredMessage = await mc.findBySentAt(1234, () => true);
 
-      assert.deepEqual(
-        filteredMessages,
-        [message1.attributes, message2.attributes],
-        'first'
-      );
+      assert.deepEqual(filteredMessage, message1.attributes, 'first');
 
-      mc.__DEPRECATED$unregister(message2.id);
+      mc.__DEPRECATED$unregister(message1.id);
 
-      const filteredMessages2 = Array.from(
-        mc.__DEPRECATED$filterBySentAt(1234)
-      ).map(x => x.attributes);
+      const filteredMessage2 = await mc.findBySentAt(1234, () => true);
 
-      assert.deepEqual(filteredMessages2, [message1.attributes], 'second');
+      assert.deepEqual(filteredMessage2, message2.attributes, 'second');
     });
   });
 
@@ -358,7 +357,7 @@ describe('MessageCache', () => {
         timestamp: Date.now(),
         type: 'incoming',
       };
-      await window.Signal.Data.saveMessage(messageAttributes, {
+      await DataWriter.saveMessage(messageAttributes, {
         forceSave: true,
         ourAci,
       });
@@ -379,7 +378,7 @@ describe('MessageCache', () => {
         skipSaveToDatabase: false,
       });
 
-      const messageFromDatabase = await window.Signal.Data.getMessageById(id);
+      const messageFromDatabase = await DataReader.getMessageById(id);
 
       assert.deepEqual(newAttributes, messageFromDatabase);
     });

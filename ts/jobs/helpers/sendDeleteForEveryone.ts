@@ -17,6 +17,7 @@ import {
 } from './handleMultipleSendErrors';
 import { ourProfileKeyService } from '../../services/ourProfileKey';
 import { wrapWithSyncMessageSend } from '../../util/wrapWithSyncMessageSend';
+import { DataWriter } from '../../sql/Client';
 
 import type { ConversationModel } from '../../models/conversations';
 import type {
@@ -132,6 +133,7 @@ export async function sendDeleteForEveryone(
             profileKey,
             recipients: conversation.getRecipients(),
             timestamp,
+            expireTimerVersion: undefined,
           });
           strictAssert(
             proto.dataMessage,
@@ -201,6 +203,7 @@ export async function sendDeleteForEveryone(
                 deletedForEveryoneTimestamp: targetTimestamp,
                 timestamp,
                 expireTimer: undefined,
+                expireTimerVersion: undefined,
                 contentHint,
                 groupId: undefined,
                 profileKey,
@@ -302,7 +305,7 @@ async function updateMessageWithSuccessfulSends(
       deletedForEveryoneSendStatus: {},
       deletedForEveryoneFailed: undefined,
     });
-    await window.Signal.Data.saveMessage(message.attributes, {
+    await DataWriter.saveMessage(message.attributes, {
       ourAci: window.textsecure.storage.user.getCheckedAci(),
     });
 
@@ -325,7 +328,7 @@ async function updateMessageWithSuccessfulSends(
     deletedForEveryoneSendStatus,
     deletedForEveryoneFailed: undefined,
   });
-  await window.Signal.Data.saveMessage(message.attributes, {
+  await DataWriter.saveMessage(message.attributes, {
     ourAci: window.textsecure.storage.user.getCheckedAci(),
   });
 }
@@ -341,7 +344,7 @@ async function updateMessageWithFailure(
   );
 
   message.set({ deletedForEveryoneFailed: true });
-  await window.Signal.Data.saveMessage(message.attributes, {
+  await DataWriter.saveMessage(message.attributes, {
     ourAci: window.textsecure.storage.user.getCheckedAci(),
   });
 }

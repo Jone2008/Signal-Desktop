@@ -15,18 +15,22 @@ import {
   type NewAttachmentDownloadJobType,
 } from '../../jobs/AttachmentDownloadManager';
 import type { AttachmentDownloadJobType } from '../../types/AttachmentDownload';
-import dataInterface from '../../sql/Client';
+import { DataReader, DataWriter } from '../../sql/Client';
 import { MINUTE } from '../../util/durations';
 import { type AciString } from '../../types/ServiceId';
 import { type AttachmentType, AttachmentVariant } from '../../types/Attachment';
 import { strictAssert } from '../../util/assert';
+import { AttachmentDownloadSource } from '../../sql/Interface';
+import { getAttachmentCiphertextLength } from '../../AttachmentCrypto';
 
 function composeJob({
   messageId,
   receivedAt,
   attachmentOverrides,
+  jobOverrides,
 }: Pick<NewAttachmentDownloadJobType, 'messageId' | 'receivedAt'> & {
   attachmentOverrides?: Partial<AttachmentType>;
+  jobOverrides?: Partial<AttachmentDownloadJobType>;
 }): AttachmentDownloadJobType {
   const digest = `digestFor${messageId}`;
   const size = 128;
@@ -38,17 +42,20 @@ function composeJob({
     attachmentType: 'attachment',
     digest,
     size,
+    ciphertextSize: getAttachmentCiphertextLength(size),
     contentType,
     active: false,
     attempts: 0,
     retryAfter: null,
     lastAttemptTimestamp: null,
+    source: AttachmentDownloadSource.STANDARD,
     attachment: {
       contentType,
       size,
       digest: `digestFor${messageId}`,
       ...attachmentOverrides,
     },
+    ...jobOverrides,
   };
 }
 
@@ -60,7 +67,7 @@ describe('AttachmentDownloadManager/JobManager', () => {
   let isInCall: sinon.SinonStub;
 
   beforeEach(async () => {
-    await dataInterface.removeAll();
+    await DataWriter.removeAll();
 
     sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers();
@@ -99,7 +106,7 @@ describe('AttachmentDownloadManager/JobManager', () => {
     urgency: AttachmentDownloadUrgency
   ) {
     // Save message first to satisfy foreign key constraint
-    await dataInterface.saveMessage(
+    await DataWriter.saveMessage(
       {
         id: job.messageId,
         type: 'incoming',
@@ -114,18 +121,24 @@ describe('AttachmentDownloadManager/JobManager', () => {
       }
     );
     await downloadManager?.addJob({
-      ...job,
       urgency,
+      ...job,
     });
   }
   async function addJobs(
-    num: number
+    num: number,
+    jobOverrides?:
+      | Partial<AttachmentDownloadJobType>
+      | ((idx: number) => Partial<AttachmentDownloadJobType>)
   ): Promise<Array<AttachmentDownloadJobType>> {
-    const jobs = new Array(num)
-      .fill(null)
-      .map((_, idx) =>
-        composeJob({ messageId: `message-${idx}`, receivedAt: idx })
-      );
+    const jobs = new Array(num).fill(null).map((_, idx) =>
+      composeJob({
+        messageId: `message-${idx}`,
+        receivedAt: idx,
+        jobOverrides:
+          typeof jobOverrides === 'function' ? jobOverrides(idx) : jobOverrides,
+      })
+    );
     for (const job of jobs) {
       // eslint-disable-next-line no-await-in-loop
       await addJob(job, AttachmentDownloadUrgency.STANDARD);
@@ -157,18 +170,22 @@ describe('AttachmentDownloadManager/JobManager', () => {
     );
   }
 
+  async function flushSQLReads() {
+    await DataWriter.getNextAttachmentDownloadJobs({ limit: 10 });
+  }
+
   async function advanceTime(ms: number) {
     // When advancing the timers, we want to make sure any DB operations are completed
     // first. In cases like maybeStartJobs where we prevent re-entrancy, without this,
     // prior (unfinished) invocations can prevent subsequent calls after the clock is
     // ticked forward and make tests unreliable
-    await dataInterface.getAllItems();
+    await flushSQLReads();
     const now = Date.now();
     while (Date.now() < now + ms) {
       // eslint-disable-next-line no-await-in-loop
       await clock.tickAsync(downloadManager?.tickInterval ?? 1000);
       // eslint-disable-next-line no-await-in-loop
-      await dataInterface.getAllItems();
+      await flushSQLReads();
     }
   }
 
@@ -187,7 +204,7 @@ describe('AttachmentDownloadManager/JobManager', () => {
   it('runs 3 jobs at a time in descending receivedAt order', async () => {
     const jobs = await addJobs(5);
     // Confirm they are saved to DB
-    const allJobs = await dataInterface.getNextAttachmentDownloadJobs({
+    const allJobs = await DataWriter.getNextAttachmentDownloadJobs({
       limit: 100,
     });
 
@@ -298,8 +315,8 @@ describe('AttachmentDownloadManager/JobManager', () => {
     assert.strictEqual(runJob.callCount, 2);
     assertRunJobCalledWith([jobs[1], jobs[0]]);
 
-    const retriedJob = await dataInterface.getAttachmentDownloadJob(jobs[1]);
-    const finishedJob = await dataInterface.getAttachmentDownloadJob(jobs[0]);
+    const retriedJob = await DataReader.getAttachmentDownloadJob(jobs[1]);
+    const finishedJob = await DataReader.getAttachmentDownloadJob(jobs[0]);
 
     assert.isUndefined(finishedJob);
     assert.strictEqual(retriedJob?.attempts, 1);
@@ -332,7 +349,7 @@ describe('AttachmentDownloadManager/JobManager', () => {
     ]);
 
     // Ensure it's been removed after completed
-    assert.isUndefined(await dataInterface.getAttachmentDownloadJob(jobs[1]));
+    assert.isUndefined(await DataReader.getAttachmentDownloadJob(jobs[1]));
   });
 
   it('will reset attempts if addJob is called again', async () => {
@@ -382,21 +399,52 @@ describe('AttachmentDownloadManager/JobManager', () => {
     assert.strictEqual(runJob.callCount, 8);
 
     // Ensure it's been removed
-    assert.isUndefined(await dataInterface.getAttachmentDownloadJob(jobs[0]));
+    assert.isUndefined(await DataReader.getAttachmentDownloadJob(jobs[0]));
+  });
+
+  it('only selects backup_import jobs if the mediaDownload is not paused', async () => {
+    await window.storage.put('backupMediaDownloadPaused', true);
+    const jobs = await addJobs(6, idx => ({
+      source:
+        idx % 2 === 0
+          ? AttachmentDownloadSource.BACKUP_IMPORT
+          : AttachmentDownloadSource.STANDARD,
+    }));
+    // make one of the backup job messages visible to test that code path as well
+    downloadManager?.updateVisibleTimelineMessages(['message-0', 'message-1']);
+    await downloadManager?.start();
+    await waitForJobToBeCompleted(jobs[3]);
+    assertRunJobCalledWith([jobs[1], jobs[5], jobs[3]]);
+    await advanceTime((downloadManager?.tickInterval ?? MINUTE) * 5);
+    assertRunJobCalledWith([jobs[1], jobs[5], jobs[3]]);
+
+    // resume backups
+    await window.storage.put('backupMediaDownloadPaused', false);
+    await advanceTime((downloadManager?.tickInterval ?? MINUTE) * 5);
+    assertRunJobCalledWith([
+      jobs[1],
+      jobs[5],
+      jobs[3],
+      jobs[0],
+      jobs[4],
+      jobs[2],
+    ]);
   });
 });
 
 describe('AttachmentDownloadManager/runDownloadAttachmentJob', () => {
   let sandbox: sinon.SinonSandbox;
   let downloadAttachment: sinon.SinonStub;
-
+  let processNewAttachment: sinon.SinonStub;
   beforeEach(async () => {
     sandbox = sinon.createSandbox();
     downloadAttachment = sandbox.stub().returns({
       path: '/path/to/file',
       iv: Buffer.alloc(16),
       plaintextHash: 'plaintextHash',
+      isReencryptableToSameDigest: true,
     });
+    processNewAttachment = sandbox.stub().callsFake(attachment => attachment);
   });
 
   afterEach(async () => {
@@ -412,10 +460,13 @@ describe('AttachmentDownloadManager/runDownloadAttachmentJob', () => {
       const result = await runDownloadAttachmentJobInner({
         job,
         isForCurrentlyVisibleMessage: true,
-        dependencies: { downloadAttachment },
+        dependencies: {
+          downloadAttachment,
+          processNewAttachment,
+        },
       });
 
-      assert.strictEqual(result.onlyAttemptedBackupThumbnail, false);
+      assert.strictEqual(result.downloadedVariant, AttachmentVariant.Default);
       assert.strictEqual(downloadAttachment.callCount, 1);
       assert.deepStrictEqual(downloadAttachment.getCall(0).args[0], {
         attachment: job.attachment,
@@ -436,12 +487,15 @@ describe('AttachmentDownloadManager/runDownloadAttachmentJob', () => {
       const result = await runDownloadAttachmentJobInner({
         job,
         isForCurrentlyVisibleMessage: true,
-        dependencies: { downloadAttachment },
+        dependencies: {
+          downloadAttachment,
+          processNewAttachment,
+        },
       });
 
       strictAssert(
-        result.onlyAttemptedBackupThumbnail === true,
-        'only attempted backup thumbnail'
+        result.downloadedVariant === AttachmentVariant.ThumbnailFromBackup,
+        'downloaded thumbnail'
       );
       assert.deepStrictEqual(
         omit(result.attachmentWithThumbnail, 'thumbnailFromBackup'),
@@ -479,9 +533,12 @@ describe('AttachmentDownloadManager/runDownloadAttachmentJob', () => {
       const result = await runDownloadAttachmentJobInner({
         job,
         isForCurrentlyVisibleMessage: true,
-        dependencies: { downloadAttachment },
+        dependencies: {
+          downloadAttachment,
+          processNewAttachment,
+        },
       });
-      assert.strictEqual(result.onlyAttemptedBackupThumbnail, false);
+      assert.strictEqual(result.downloadedVariant, AttachmentVariant.Default);
       assert.strictEqual(downloadAttachment.callCount, 1);
       assert.deepStrictEqual(downloadAttachment.getCall(0).args[0], {
         attachment: job.attachment,
@@ -508,7 +565,10 @@ describe('AttachmentDownloadManager/runDownloadAttachmentJob', () => {
         runDownloadAttachmentJobInner({
           job,
           isForCurrentlyVisibleMessage: true,
-          dependencies: { downloadAttachment },
+          dependencies: {
+            downloadAttachment,
+            processNewAttachment,
+          },
         })
       );
 
@@ -538,9 +598,12 @@ describe('AttachmentDownloadManager/runDownloadAttachmentJob', () => {
       const result = await runDownloadAttachmentJobInner({
         job,
         isForCurrentlyVisibleMessage: false,
-        dependencies: { downloadAttachment },
+        dependencies: {
+          downloadAttachment,
+          processNewAttachment,
+        },
       });
-      assert.strictEqual(result.onlyAttemptedBackupThumbnail, false);
+      assert.strictEqual(result.downloadedVariant, AttachmentVariant.Default);
       assert.strictEqual(downloadAttachment.callCount, 1);
       assert.deepStrictEqual(downloadAttachment.getCall(0).args[0], {
         attachment: job.attachment,
@@ -572,9 +635,15 @@ describe('AttachmentDownloadManager/runDownloadAttachmentJob', () => {
       const result = await runDownloadAttachmentJobInner({
         job,
         isForCurrentlyVisibleMessage: false,
-        dependencies: { downloadAttachment },
+        dependencies: {
+          downloadAttachment,
+          processNewAttachment,
+        },
       });
-      assert.strictEqual(result.onlyAttemptedBackupThumbnail, false);
+      assert.strictEqual(
+        result.downloadedVariant,
+        AttachmentVariant.ThumbnailFromBackup
+      );
       assert.strictEqual(downloadAttachment.callCount, 2);
       assert.deepStrictEqual(downloadAttachment.getCall(0).args[0], {
         attachment: job.attachment,
@@ -607,7 +676,10 @@ describe('AttachmentDownloadManager/runDownloadAttachmentJob', () => {
         runDownloadAttachmentJobInner({
           job,
           isForCurrentlyVisibleMessage: false,
-          dependencies: { downloadAttachment },
+          dependencies: {
+            downloadAttachment,
+            processNewAttachment,
+          },
         })
       );
 

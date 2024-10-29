@@ -68,11 +68,12 @@ export type StorageAccessType = {
   // Not used UI, stored as is when imported from backup.
   defaultWallpaperPhotoPointer: Uint8Array;
   defaultWallpaperPreset: number;
+  defaultDimWallpaperInDarkMode: boolean;
+  defaultAutoBubbleColor: boolean;
 
   customColors: CustomColorsItemType;
   device_name: string;
   existingOnboardingStoryMessageIds: ReadonlyArray<string> | undefined;
-  hasRegisterSupportForUnauthenticatedDelivery: boolean;
   hasSetMyStoriesPrivacy: boolean;
   hasCompletedUsernameOnboarding: boolean;
   hasCompletedUsernameLinkOnboarding: boolean;
@@ -80,7 +81,7 @@ export type StorageAccessType = {
   hasSeenGroupStoryEducationSheet: boolean;
   hasViewedOnboardingStory: boolean;
   hasStoriesDisabled: boolean;
-  storyViewReceiptsEnabled: boolean;
+  storyViewReceiptsEnabled: boolean | undefined;
   identityKeyMap: IdentityKeyMap;
   lastAttemptedToRefreshProfilesAt: number;
   lastResortKeyUpdateTime: number;
@@ -109,6 +110,7 @@ export type StorageAccessType = {
   synced_at: number;
   userAgent: string;
   uuid_id: string;
+  useRingrtcAdm: boolean;
   pni: string;
   version: string;
   linkPreviews: boolean;
@@ -141,6 +143,10 @@ export type StorageAccessType = {
   callLinkAuthCredentials: ReadonlyArray<GroupCredentialType>;
   backupCredentials: ReadonlyArray<BackupCredentialType>;
   backupCredentialsLastRequestTime: number;
+  backupMediaDownloadTotalBytes: number;
+  backupMediaDownloadCompletedBytes: number;
+  backupMediaDownloadPaused: boolean;
+  backupMediaDownloadBannerDismissed: boolean;
   setBackupSignatureKey: boolean;
   lastReceivedAtCounter: number;
   preferredReactionEmoji: ReadonlyArray<string>;
@@ -175,6 +181,23 @@ export type StorageAccessType = {
     serverId: Uint8Array;
   };
   needOrphanedAttachmentCheck: boolean;
+  observedCapabilities: {
+    deleteSync?: true;
+    versionedExpirationTimer?: true;
+
+    // Note: Upon capability deprecation - change the value type to `never` and
+    // remove it in `ts/background.ts`
+  };
+
+  // If present - we are downloading backup
+  backupDownloadPath: string;
+
+  // If present together with backupDownloadPath - we are downloading
+  // link-and-sync backup
+  backupEphemeralKey: Uint8Array;
+
+  // If true Desktop message history was restored from backup
+  isRestoredFromBackup: boolean;
 
   // Deprecated
   'challenge:retry-message-ids': never;
@@ -187,6 +210,7 @@ export type StorageAccessType = {
   lastStartup: never;
   sendEditWarningShown: never;
   formattingWarningShown: never;
+  hasRegisterSupportForUnauthenticatedDelivery: never;
 };
 
 export type StorageInterface = {

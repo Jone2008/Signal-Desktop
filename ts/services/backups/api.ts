@@ -1,6 +1,7 @@
 // Copyright 2024 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { type Readable } from 'node:stream';
 import { strictAssert } from '../../util/assert';
 import type {
   WebAPIType,
@@ -13,12 +14,17 @@ import type {
 import type { BackupCredentials } from './credentials';
 import { uploadFile } from '../../util/uploadAttachment';
 
+export type DownloadOptionsType = Readonly<{
+  downloadOffset: number;
+  onProgress: (currentBytes: number, totalBytes: number) => void;
+  abortSignal?: AbortSignal;
+}>;
+
 export class BackupAPI {
   private cachedBackupInfo: GetBackupInfoResponseType | undefined;
   constructor(private credentials: BackupCredentials) {}
 
   public async refresh(): Promise<void> {
-    // TODO: DESKTOP-6979
     await this.server.refreshBackup(
       await this.credentials.getHeadersForToday()
     );
@@ -63,6 +69,43 @@ export class BackupAPI {
       absoluteCiphertextPath: filePath,
       ciphertextFileSize: fileSize,
       uploadForm: form,
+    });
+  }
+
+  public async download({
+    downloadOffset,
+    onProgress,
+    abortSignal,
+  }: DownloadOptionsType): Promise<Readable> {
+    const { cdn, backupDir, backupName } = await this.getInfo();
+    const { headers } = await this.credentials.getCDNReadCredentials(cdn);
+
+    return this.server.getBackupStream({
+      cdn,
+      backupDir,
+      backupName,
+      headers,
+      downloadOffset,
+      onProgress,
+      abortSignal,
+    });
+  }
+
+  public async downloadEphemeral({
+    downloadOffset,
+    onProgress,
+    abortSignal,
+  }: DownloadOptionsType): Promise<Readable> {
+    const { cdn, key } = await this.server.getTransferArchive({
+      abortSignal,
+    });
+
+    return this.server.getEphemeralBackupStream({
+      cdn,
+      key,
+      downloadOffset,
+      onProgress,
+      abortSignal,
     });
   }
 

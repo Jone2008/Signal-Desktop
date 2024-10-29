@@ -4,7 +4,9 @@
 .module-Button {
   @mixin focus-box-shadow($inner-color, $outer-color) {
     &:focus {
-      box-shadow: 0 0 0 1px $inner-color, 0 0 0 4px $outer-color;
+      box-shadow:
+        0 0 0 1px $inner-color,
+        0 0 0 4px $outer-color;
     }
   }
 
@@ -69,6 +71,15 @@
       background: fade-out($background-color, 0.6);
     }
 
+    &--discouraged {
+      @include light-theme {
+        opacity: 0.4;
+      }
+      @include dark-theme {
+        opacity: 0.5;
+      }
+    }
+
     @include light-theme {
       @include hover-and-active-states($background-color, $color-black);
     }
@@ -94,9 +105,15 @@
       &--affirmative {
         color: $color-ultramarine;
       }
+      &--affirmative--discouraged {
+        color: fade-out($color-ultramarine, 0.5);
+      }
 
       &--destructive {
         color: $color-accent-red;
+      }
+      &--destructive--discouraged {
+        color: fade-out($color-ultramarine, 0.5);
       }
 
       @include hover-and-active-states($background-color, $color-black);
@@ -117,9 +134,15 @@
       &--affirmative {
         color: $color-ultramarine-light;
       }
+      &--affirmative--discouraged {
+        color: fade-out($color-ultramarine-light, 0.5);
+      }
 
       &--destructive {
         color: $color-accent-red;
+      }
+      &--destructive--discouraged {
+        color: fade-out($color-accent-red, 0.5);
       }
 
       @include hover-and-active-states($background-color, $color-white);
@@ -160,6 +183,15 @@
       background: fade-out($background-color, 0.6);
     }
 
+    &--discouraged {
+      @include light-theme {
+        opacity: 0.4;
+      }
+      @include dark-theme {
+        opacity: 0.5;
+      }
+    }
+
     @include light-theme {
       @include hover-and-active-states($background-color, $color-black);
     }
@@ -189,6 +221,10 @@
         color: fade-out($color, 0.4);
         background: fade-out($background-color, 0.6);
       }
+      &--discouraged {
+        color: fade-out($color, 0.5);
+      }
+
       @include hover-and-active-states($background-color, $color-black);
     }
 
@@ -203,6 +239,10 @@
         color: fade-out($color, 0.4);
         background: fade-out($background-color, 0.6);
       }
+      &--discouraged {
+        color: fade-out($color, 0.5);
+      }
+
       @include hover-and-active-states($background-color, $color-white);
     }
   }
@@ -218,6 +258,15 @@
     min-height: 44px;
     min-width: 68px;
     padding: 8px;
+
+    &--discouraged {
+      @include light-theme {
+        opacity: 0.4;
+      }
+      @include dark-theme {
+        opacity: 0.5;
+      }
+    }
 
     @include light-theme {
       background-color: $color-gray-05;

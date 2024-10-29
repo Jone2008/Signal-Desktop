@@ -16,8 +16,8 @@ import type {
   ProcessedEnvelope,
   ProcessedDataMessage,
   ProcessedSent,
+  ProcessedAttachment,
 } from './Types.d';
-import type { ContactDetailsWithAvatar } from './ContactsParser';
 import type {
   CallEventDetails,
   CallLogEventDetails,
@@ -84,7 +84,7 @@ export class ErrorEvent extends Event {
 
 export class ContactSyncEvent extends Event {
   constructor(
-    public readonly contacts: ReadonlyArray<ContactDetailsWithAvatar>,
+    public readonly contactAttachment: ProcessedAttachment,
     public readonly complete: boolean,
     public readonly receivedAtCounter: number,
     public readonly sentAt: number
@@ -113,7 +113,10 @@ export class EnvelopeQueuedEvent extends Event {
 export type ConfirmCallback = () => void;
 
 export class ConfirmableEvent extends Event {
-  constructor(type: string, public readonly confirm: ConfirmCallback) {
+  constructor(
+    type: string,
+    public readonly confirm: ConfirmCallback
+  ) {
     super(type);
   }
 }
@@ -134,6 +137,21 @@ export class DeliveryEvent extends ConfirmableEvent {
     confirm: ConfirmCallback
   ) {
     super('delivery', confirm);
+  }
+}
+
+export type SuccessfulDecryptEventData = Readonly<{
+  senderDevice: number;
+  senderAci: AciString;
+  timestamp: number;
+}>;
+
+export class SuccessfulDecryptEvent extends ConfirmableEvent {
+  constructor(
+    public readonly data: SuccessfulDecryptEventData,
+    confirm: ConfirmCallback
+  ) {
+    super('successful-decrypt', confirm);
   }
 }
 
@@ -205,7 +223,10 @@ export type SentEventData = Readonly<{
 }>;
 
 export class SentEvent extends ConfirmableEvent {
-  constructor(public readonly data: SentEventData, confirm: ConfirmCallback) {
+  constructor(
+    public readonly data: SentEventData,
+    confirm: ConfirmCallback
+  ) {
     super('sent', confirm);
   }
 }

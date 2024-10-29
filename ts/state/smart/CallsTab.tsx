@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import React, { memo, useCallback, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import { DataReader } from '../../sql/Client';
 import { useItemsActions } from '../ducks/items';
 import {
   getNavTabsCollapsed,
@@ -31,6 +32,7 @@ import {
   getAllCallLinks,
   getCallSelector,
   getCallLinkSelector,
+  getHasAnyAdminCallLinks,
 } from '../selectors/calling';
 import { useCallHistoryActions } from '../ducks/callHistory';
 import { getCallHistoryEdition } from '../selectors/callHistory';
@@ -106,10 +108,15 @@ function getCallHistoryFilter({
 
 function renderCallLinkDetails(
   roomId: string,
-  callHistoryGroup: CallHistoryGroup
+  callHistoryGroup: CallHistoryGroup,
+  onClose: () => void
 ): JSX.Element {
   return (
-    <SmartCallLinkDetails roomId={roomId} callHistoryGroup={callHistoryGroup} />
+    <SmartCallLinkDetails
+      roomId={roomId}
+      callHistoryGroup={callHistoryGroup}
+      onClose={onClose}
+    />
   );
 }
 
@@ -145,6 +152,7 @@ export const SmartCallsTab = memo(function SmartCallsTab() {
   const getAdhocCall = useSelector(getAdhocCallSelector);
   const getCall = useSelector(getCallSelector);
   const getCallLink = useSelector(getCallLinkSelector);
+  const hasAnyAdminCallLinks = useSelector(getHasAnyAdminCallLinks);
 
   const activeCall = useSelector(getActiveCallState);
   const callHistoryEdition = useSelector(getCallHistoryEdition);
@@ -166,12 +174,10 @@ export const SmartCallsTab = memo(function SmartCallsTab() {
     startCallLinkLobbyByRoomId,
     togglePip,
   } = useCallingActions();
-  const {
-    clearAllCallHistory: clearCallHistory,
-    markCallHistoryRead,
-    markCallsTabViewed,
-  } = useCallHistoryActions();
-  const { toggleCallLinkEditModal } = useGlobalModalActions();
+  const { clearAllCallHistory, markCallHistoryRead, markCallsTabViewed } =
+    useCallHistoryActions();
+  const { toggleCallLinkEditModal, toggleConfirmLeaveCallModal } =
+    useGlobalModalActions();
 
   const getCallHistoryGroupsCount = useCallback(
     async (options: CallHistoryFilterOptions) => {
@@ -184,9 +190,8 @@ export const SmartCallsTab = memo(function SmartCallsTab() {
       if (callHistoryFilter == null) {
         return 0;
       }
-      const count = await window.Signal.Data.getCallHistoryGroupsCount(
-        callHistoryFilter
-      );
+      const count =
+        await DataReader.getCallHistoryGroupsCount(callHistoryFilter);
       return count;
     },
     [allCallLinks, allConversations, regionCode]
@@ -206,7 +211,7 @@ export const SmartCallsTab = memo(function SmartCallsTab() {
       if (callHistoryFilter == null) {
         return [];
       }
-      const results = await window.Signal.Data.getCallHistoryGroups(
+      const results = await DataReader.getCallHistoryGroups(
         callHistoryFilter,
         pagination
       );
@@ -239,11 +244,12 @@ export const SmartCallsTab = memo(function SmartCallsTab() {
       callHistoryEdition={callHistoryEdition}
       canCreateCallLinks={canCreateCallLinks}
       hangUpActiveCall={hangUpActiveCall}
+      hasAnyAdminCallLinks={hasAnyAdminCallLinks}
       hasFailedStorySends={hasFailedStorySends}
       hasPendingUpdate={hasPendingUpdate}
       i18n={i18n}
       navTabsCollapsed={navTabsCollapsed}
-      onClearCallHistory={clearCallHistory}
+      onClearCallHistory={clearAllCallHistory}
       onMarkCallHistoryRead={markCallHistoryRead}
       onToggleNavTabsCollapse={toggleNavTabsCollapse}
       onCreateCallLink={handleCreateCallLink}
@@ -257,6 +263,7 @@ export const SmartCallsTab = memo(function SmartCallsTab() {
       regionCode={regionCode}
       savePreferredLeftPaneWidth={savePreferredLeftPaneWidth}
       startCallLinkLobbyByRoomId={startCallLinkLobbyByRoomId}
+      toggleConfirmLeaveCallModal={toggleConfirmLeaveCallModal}
       togglePip={togglePip}
     />
   );

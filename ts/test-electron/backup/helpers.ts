@@ -4,7 +4,7 @@
 import { assert } from 'chai';
 import path from 'path';
 import { tmpdir } from 'os';
-import { sortBy } from 'lodash';
+import { omit, sortBy } from 'lodash';
 import { createReadStream } from 'fs';
 import { mkdtemp, rm } from 'fs/promises';
 import * as sinon from 'sinon';
@@ -23,7 +23,7 @@ import type {
 import { backupsService } from '../../services/backups';
 import { isUnsupportedMessage } from '../../state/selectors/message';
 import { generateAci, generatePni } from '../../types/ServiceId';
-import Data from '../../sql/Client';
+import { DataReader, DataWriter } from '../../sql/Client';
 import { getRandomBytes } from '../../Crypto';
 import * as Bytes from '../../Bytes';
 
@@ -65,6 +65,11 @@ function sortAndNormalize(
       reactions,
       sendStateByConversationId,
       verifiedChanged,
+      attachments,
+      preview,
+      contact,
+      quote,
+      sticker,
 
       // This is not in the backup
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -75,6 +80,8 @@ function sortAndNormalize(
       sourceDevice: _sourceDevice,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       editMessageReceivedAt: _editMessageReceivedAt,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      schemaVersion: _schemaVersion,
 
       ...rest
     } = message;
@@ -122,6 +129,36 @@ function sortAndNormalize(
           };
         }),
 
+        attachments: attachments?.map(attachment =>
+          omit(attachment, 'downloadPath')
+        ),
+        preview: preview?.map(previewItem => ({
+          ...previewItem,
+          image: omit(previewItem.image, 'downloadPath'),
+        })),
+        contact: contact?.map(contactItem => ({
+          ...contactItem,
+          avatar: {
+            ...contactItem.avatar,
+            avatar: omit(contactItem.avatar?.avatar, 'downloadPath'),
+          },
+        })),
+        quote: quote
+          ? {
+              ...quote,
+              attachments: quote?.attachments.map(quotedAttachment => ({
+                ...quotedAttachment,
+                thumbnail: omit(quotedAttachment.thumbnail, 'downloadPath'),
+              })),
+            }
+          : undefined,
+        sticker: sticker
+          ? {
+              ...sticker,
+              data: omit(sticker.data, 'downloadPath'),
+            }
+          : undefined,
+
         // Not an original property, but useful
         isUnsupported: isUnsupportedMessage(message),
       })
@@ -145,7 +182,7 @@ export async function symmetricRoundtripHarness(
 }
 
 async function updateConvoIdToTitle() {
-  const all = await Data.getAllConversations();
+  const all = await DataReader.getAllConversations();
   for (const convo of all) {
     CONVO_ID_TO_STABLE_ID.set(
       convo.id,
@@ -167,7 +204,7 @@ export async function asymmetricRoundtripHarness(
   try {
     const targetOutputFile = path.join(outDir, 'backup.bin');
 
-    await Data.saveMessages(before, { forceSave: true, ourAci: OUR_ACI });
+    await DataWriter.saveMessages(before, { forceSave: true, ourAci: OUR_ACI });
 
     await backupsService.exportToDisk(targetOutputFile, options.backupLevel);
 
@@ -177,7 +214,7 @@ export async function asymmetricRoundtripHarness(
 
     await backupsService.importBackup(() => createReadStream(targetOutputFile));
 
-    const messagesFromDatabase = await Data._getAllMessages();
+    const messagesFromDatabase = await DataReader._getAllMessages();
 
     await updateConvoIdToTitle();
 
@@ -198,11 +235,9 @@ export async function asymmetricRoundtripHarness(
   }
 }
 
-async function clearData() {
-  await Data._removeAllMessages();
-  await Data._removeAllConversations();
-  await Data.removeAllItems();
-  window.storage.reset();
+export async function clearData(): Promise<void> {
+  await DataWriter.removeAll();
+  await window.storage.fetch();
   window.ConversationController.reset();
 
   await setupBasics();
@@ -222,7 +257,8 @@ export async function setupBasics(): Promise<void> {
 
   window.Events = {
     ...window.Events,
-    getTypingIndicatorSetting: () => false,
-    getLinkPreviewSetting: () => false,
+    getTypingIndicatorSetting: () =>
+      window.storage.get('typingIndicators', false),
+    getLinkPreviewSetting: () => window.storage.get('linkPreviews', false),
   };
 }
