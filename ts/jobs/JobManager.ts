@@ -39,7 +39,10 @@ export type JobManagerParamsType<
     limit: number;
     timestamp: number;
   }) => Promise<Array<JobType>>;
-  saveJob: (job: JobType) => Promise<void>;
+  saveJob: (
+    job: JobType,
+    options?: { allowBatching?: boolean }
+  ) => Promise<void>;
   removeJob: (job: JobType) => Promise<void>;
   runJob: (
     job: JobType,
@@ -88,6 +91,7 @@ export abstract class JobManager<CoreJobType> {
 
     this.enabled = true;
     await this.params.markAllJobsInactive();
+    await this.maybeStartJobs();
     this.tick();
   }
 
@@ -189,7 +193,8 @@ export abstract class JobManager<CoreJobType> {
         return { isAlreadyRunning: true };
       }
 
-      await this.params.saveJob(job);
+      // Allow batching of all saves except those that we will start immediately
+      await this.params.saveJob(job, { allowBatching: !options?.forceStart });
 
       if (options?.forceStart) {
         if (!this.enabled) {
@@ -241,7 +246,7 @@ export abstract class JobManager<CoreJobType> {
         timestamp: Date.now(),
       });
 
-      if (nextJobs.length === 0) {
+      if (nextJobs.length === 0 && this.activeJobs.size === 0) {
         if (this.idleCallbacks.length > 0) {
           const callbacks = this.idleCallbacks;
           this.idleCallbacks = [];

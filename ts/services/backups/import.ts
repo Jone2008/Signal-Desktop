@@ -109,10 +109,11 @@ import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc';
 import { loadAllAndReinitializeRedux } from '../allLoaders';
 import { resetBackupMediaDownloadProgress } from '../../util/backupMediaDownload';
 import { getEnvironment, isTestEnvironment } from '../../environment';
+import { drop } from '../../util/drop';
+import { hasAttachmentDownloads } from '../../util/hasAttachmentDownloads';
 
 const MAX_CONCURRENCY = 10;
 
-const CONVERSATION_OP_BATCH_SIZE = 10000;
 const SAVE_MESSAGE_BATCH_SIZE = 10000;
 
 // Keep 1000 recent messages in memory to speed up quote lookup.
@@ -202,9 +203,9 @@ export class BackupImportStream extends Writable {
     number,
     ConversationAttributesType
   >();
-  private readonly conversationOpBatch = new Map<
-    ConversationAttributesType,
-    'save' | 'update'
+  private readonly conversations = new Map<
+    string,
+    ConversationAttributesType
   >();
   private readonly saveMessageBatch = new Set<MessageAttributesType>();
   private readonly stickerPacks = new Array<StickerPackPointerType>();
@@ -339,6 +340,11 @@ export class BackupImportStream extends Writable {
         !isTestEnvironment(getEnvironment())
       ) {
         await AttachmentDownloadManager.start();
+        drop(
+          AttachmentDownloadManager.waitForIdle(async () => {
+            await window.storage.put('backupMediaDownloadIdle', true);
+          })
+        );
       }
 
       done();
@@ -432,22 +438,13 @@ export class BackupImportStream extends Writable {
   private async saveConversation(
     attributes: ConversationAttributesType
   ): Promise<void> {
-    this.conversationOpBatch.set(attributes, 'save');
-    if (this.conversationOpBatch.size >= CONVERSATION_OP_BATCH_SIZE) {
-      return this.flushConversations();
-    }
+    this.conversations.set(attributes.id, attributes);
   }
 
   private async updateConversation(
     attributes: ConversationAttributesType
   ): Promise<void> {
-    if (!this.conversationOpBatch.has(attributes)) {
-      this.conversationOpBatch.set(attributes, 'update');
-    }
-
-    if (this.conversationOpBatch.size >= CONVERSATION_OP_BATCH_SIZE) {
-      return this.flushConversations();
-    }
+    this.conversations.set(attributes.id, attributes);
   }
 
   private async saveMessage(attributes: MessageAttributesType): Promise<void> {
@@ -459,25 +456,23 @@ export class BackupImportStream extends Writable {
   }
 
   private async flushConversations(): Promise<void> {
-    const saves = new Array<ConversationAttributesType>();
     const updates = new Array<ConversationAttributesType>();
-    for (const [conversation, op] of this.conversationOpBatch) {
-      if (op === 'save') {
-        saves.push(conversation);
-      } else {
-        updates.push(conversation);
+
+    if (this.ourConversation) {
+      const us = this.conversations.get(this.ourConversation.id);
+      if (us) {
+        updates.push(us);
+        this.conversations.delete(us.id);
       }
     }
-    this.conversationOpBatch.clear();
+
+    const saves = Array.from(this.conversations.values());
+    this.conversations.clear();
 
     // Queue writes at the same time to prevent races.
     await Promise.all([
-      saves.length > 0
-        ? DataWriter.saveConversations(saves)
-        : Promise.resolve(),
-      updates.length > 0
-        ? DataWriter.updateConversations(updates)
-        : Promise.resolve(),
+      DataWriter.saveConversations(saves),
+      DataWriter.updateConversations(updates),
     ]);
   }
 
@@ -513,6 +508,8 @@ export class BackupImportStream extends Writable {
       ourAci,
     });
 
+    const attachmentDownloadJobPromises: Array<Promise<unknown>> = [];
+
     // TODO (DESKTOP-7402): consider re-saving after updating the pending state
     for (const attributes of batch) {
       const { editHistory } = attributes;
@@ -533,11 +530,16 @@ export class BackupImportStream extends Writable {
         );
       }
 
-      // eslint-disable-next-line no-await-in-loop
-      await queueAttachmentDownloads(attributes, {
-        source: AttachmentDownloadSource.BACKUP_IMPORT,
-      });
+      if (hasAttachmentDownloads(attributes)) {
+        attachmentDownloadJobPromises.push(
+          queueAttachmentDownloads(attributes, {
+            source: AttachmentDownloadSource.BACKUP_IMPORT,
+          })
+        );
+      }
     }
+    await Promise.all(attachmentDownloadJobPromises);
+    await AttachmentDownloadManager.saveBatchedJobs();
   }
 
   private async saveCallHistory(
@@ -1289,6 +1291,11 @@ export class BackupImportStream extends Writable {
         ...attributes,
         ...(await this.fromStandardMessage(item.standardMessage, chatConvo.id)),
       };
+    } else if (item.viewOnceMessage) {
+      attributes = {
+        ...attributes,
+        ...(await this.fromViewOnceMessage(item.viewOnceMessage)),
+      };
     } else {
       const result = await this.fromNonBubbleChatItem(item, {
         aboutMe,
@@ -1549,6 +1556,27 @@ export class BackupImportStream extends Writable {
       quote: data.quote
         ? await this.fromQuote(data.quote, conversationId)
         : undefined,
+    };
+  }
+
+  private async fromViewOnceMessage({
+    attachment,
+    reactions,
+  }: Backups.IViewOnceMessage): Promise<Partial<MessageAttributesType>> {
+    return {
+      ...(attachment
+        ? {
+            attachments: [
+              convertBackupMessageAttachmentToAttachment(attachment),
+            ].filter(isNotNil),
+          }
+        : {
+            attachments: undefined,
+            readStatus: ReadStatus.Viewed,
+            isErased: true,
+          }),
+      reactions: this.fromReactions(reactions),
+      isViewOnce: true,
     };
   }
 

@@ -268,6 +268,8 @@ export class BackupsService {
   ): Promise<void> {
     strictAssert(!this.isRunning, 'BackupService is already running');
 
+    window.IPC.startTrackingQueryStats();
+
     log.info(`importBackup: starting ${backupType}...`);
     this.isRunning = true;
 
@@ -354,7 +356,7 @@ export class BackupsService {
       throw error;
     } finally {
       this.isRunning = false;
-
+      window.IPC.stopTrackingQueryStats({ epochName: 'Backup Import' });
       if (window.SignalCI) {
         window.SignalCI.handleEvent('backupImportComplete', null);
       }
@@ -473,8 +475,14 @@ export class BackupsService {
 
       this.downloadController = undefined;
 
-      // Too late to cancel now
       try {
+        // Too late to cancel now, make sure we are unlinked if the process
+        // is aborted due to error or restart.
+        const password = window.storage.get('password');
+        strictAssert(password != null, 'Must be registered to import backup');
+
+        await window.storage.remove('password');
+
         await this.importFromDisk(downloadPath, {
           ephemeralKey,
           onProgress: (currentBytes, totalBytes) => {
@@ -485,6 +493,9 @@ export class BackupsService {
             );
           },
         });
+
+        // Restore password on success
+        await window.storage.put('password', password);
       } finally {
         await unlink(downloadPath);
       }
