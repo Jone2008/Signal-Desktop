@@ -1343,6 +1343,10 @@ export class ConversationModel extends window.Backbone
       return;
     }
 
+    if (isSignalConversation(this.attributes)) {
+      return;
+    }
+
     // Coalesce multiple sendTypingMessage calls into one.
     //
     // `lastIsTyping` is set to the last `isTyping` value passed to the
@@ -4679,32 +4683,37 @@ export class ConversationModel extends window.Backbone
       expireTimer = undefined;
     }
 
+    const timerMatchesLocalValue =
+      this.get('expireTimer') === expireTimer ||
+      (!expireTimer && !this.get('expireTimer'));
+
+    const localVersion = this.getExpireTimerVersion();
+
     const logId =
       `updateExpirationTimer(${this.idForLogging()}, ` +
       `${expireTimer || 'disabled'}, version=${version || 0}) ` +
-      `source=${source ?? '?'} reason=${reason}`;
+      `source=${source ?? '?'} localValue=${this.get('expireTimer')} ` +
+      `localVersion=${localVersion}, reason=${reason}`;
 
     if (isSetByOther) {
-      const expireTimerVersion = this.getExpireTimerVersion();
       if (version) {
-        if (expireTimerVersion && version < expireTimerVersion) {
-          log.warn(
-            `${logId}: not updating, local version is ${expireTimerVersion}`
-          );
+        if (localVersion && version < localVersion) {
+          log.warn(`${logId}: not updating, local version is ${localVersion}`);
           return;
         }
-        if (version === expireTimerVersion) {
-          log.warn(`${logId}: expire version glare`);
+
+        if (version === localVersion) {
+          if (!timerMatchesLocalValue) {
+            log.warn(`${logId}: expire version glare`);
+          }
         } else {
           this.set({ expireTimerVersion: version });
           log.info(`${logId}: updating expire version`);
         }
       }
     }
-    if (
-      this.get('expireTimer') === expireTimer ||
-      (!expireTimer && !this.get('expireTimer'))
-    ) {
+
+    if (timerMatchesLocalValue) {
       return;
     }
 
@@ -5374,28 +5383,12 @@ export class ConversationModel extends window.Backbone
     if (!isDirectConversation(this.attributes)) {
       return;
     }
-    const { expireTimerVersion, capabilities } = this.attributes;
+    const { expireTimerVersion } = this.attributes;
 
     // This should not happen in practice, but be ready to handle
     if (expireTimerVersion >= MAX_EXPIRE_TIMER_VERSION) {
       log.warn(`${logId}: expire version overflow`);
       return;
-    }
-
-    if (expireTimerVersion <= 2) {
-      if (!capabilities?.versionedExpirationTimer) {
-        log.warn(`${logId}: missing recipient capability`);
-        return;
-      }
-      const me = window.ConversationController.getOurConversationOrThrow();
-      if (!me.get('capabilities')?.versionedExpirationTimer) {
-        log.warn(`${logId}: missing sender capability`);
-        return;
-      }
-
-      // Increment only if sender and receiver are both capable
-    } else {
-      // If we or them updated the timer version past 2 - we are both capable
     }
 
     const newVersion = expireTimerVersion + 1;

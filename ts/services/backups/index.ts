@@ -50,6 +50,8 @@ import { BackupAPI } from './api';
 import { validateBackup } from './validator';
 import { BackupType } from './types';
 import { UnsupportedBackupVersion } from './errors';
+import { ToastType } from '../../types/Toast';
+import { isNightly } from '../../util/version';
 
 export { BackupType };
 
@@ -303,6 +305,9 @@ export class BackupsService {
     log.info(`importBackup: starting ${backupType}...`);
     this.isRunning = 'import';
     const importStart = Date.now();
+
+    await DataWriter.disableMessageInsertTriggers();
+
     try {
       const importStream = await BackupImportStream.create(backupType);
       if (backupType === BackupType.Ciphertext) {
@@ -385,9 +390,18 @@ export class BackupsService {
       log.info('importBackup: finished...');
     } catch (error) {
       log.info(`importBackup: failed, error: ${Errors.toLogFormat(error)}`);
+
+      if (isNightly(window.getVersion())) {
+        window.reduxActions.toast.showToast({
+          toastType: ToastType.FailedToImportBackup,
+        });
+      }
+
       throw error;
     } finally {
       this.isRunning = false;
+      await DataWriter.enableMessageInsertTriggersAndBackfill();
+
       window.IPC.stopTrackingQueryStats({ epochName: 'Backup Import' });
       if (window.SignalCI) {
         window.SignalCI.handleEvent('backupImportComplete', {
@@ -477,18 +491,25 @@ export class BackupsService {
       }
 
       let stream: Readable;
-      if (ephemeralKey == null) {
-        stream = await this.api.download({
-          downloadOffset,
-          onProgress: onDownloadProgress,
-          abortSignal: controller.signal,
-        });
-      } else {
-        stream = await this.api.downloadEphemeral({
-          downloadOffset,
-          onProgress: onDownloadProgress,
-          abortSignal: controller.signal,
-        });
+      try {
+        if (ephemeralKey == null) {
+          stream = await this.api.download({
+            downloadOffset,
+            onProgress: onDownloadProgress,
+            abortSignal: controller.signal,
+          });
+        } else {
+          stream = await this.api.downloadEphemeral({
+            downloadOffset,
+            onProgress: onDownloadProgress,
+            abortSignal: controller.signal,
+          });
+        }
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return false;
+        }
+        throw error;
       }
 
       if (controller.signal.aborted) {
