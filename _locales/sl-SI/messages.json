@@ -590,6 +590,9 @@
   "icu:Toast--FailedToSendWithEndorsements": {
     "messageformat": "Failed to send message with endorsements"
   },
+  "icu:Toast--FailedToImportBackup": {
+    "messageformat": "Failed to process some frames during backup import. Please share your logs."
+  },
   "icu:cannotSelectPhotosAndVideosAlongWithFiles": {
     "messageformat": "Poleg datotek ne morete izbrati fotografij in videoposnetkov."
   },
@@ -687,7 +690,7 @@
     "messageformat": "Iskanje"
   },
   "icu:searchUnreadChats": {
-    "messageformat": "Search unread chats"
+    "messageformat": "Iskanje neprebranih klepetov"
   },
   "icu:clearSearch": {
     "messageformat": "Počisti iskalno polje"
@@ -699,10 +702,10 @@
     "messageformat": "Ni rezultata za \"{searchTerm}\""
   },
   "icu:noSearchResultsWithUnreadFilter": {
-    "messageformat": "No results for \"{searchTerm}\" in unread chats"
+    "messageformat": "V neprebranih klepetih ni rezultatov za \"{searchTerm}\""
   },
   "icu:noSearchResultsOnlyUnreadFilter": {
-    "messageformat": "No unread chats"
+    "messageformat": "Ni neprebranih klepetov"
   },
   "icu:noSearchResults--sms-only": {
     "messageformat": "Stiki SMS/MMS niso na voljo na Signalu Desktop."
@@ -711,13 +714,13 @@
     "messageformat": "Ni rezultatov za \"{searchTerm}\" v {conversationName}"
   },
   "icu:conversationsUnreadHeader": {
-    "messageformat": "Filtered by unread"
+    "messageformat": "Filter: neprebrano"
   },
   "icu:filterByUnreadButtonLabel": {
-    "messageformat": "Filter by unread"
+    "messageformat": "Filtriranje po neprebranih"
   },
   "icu:clearFilterButton": {
-    "messageformat": "Clear filter"
+    "messageformat": "Počisti filter"
   },
   "icu:conversationsHeader": {
     "messageformat": "Klepeti"
@@ -811,9 +814,6 @@
   },
   "icu:voiceNoteError": {
     "messageformat": "Prišlo je do težav s snemalcem zvoka."
-  },
-  "icu:attachmentSaved": {
-    "messageformat": "Priponka je bila shranjena."
   },
   "icu:attachmentSavedPlural": {
     "messageformat": "{count, plural, one {Priponka je shranjena} two {{count,number} priponki sta shranjeni} few {{count,number} priponke so shranjene} other {{count,number} priponk je shranjenih}}"
@@ -1021,18 +1021,6 @@
   },
   "icu:MessageContextMenu__info": {
     "messageformat": "Info"
-  },
-  "icu:deleteMessagesInConversation": {
-    "messageformat": "Izbriši sporočila"
-  },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__title": {
-    "messageformat": "Izbrišem sporočila?"
-  },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description": {
-    "messageformat": "Vsa sporočila v tem klepetu bodo izbrisana iz te naprave. Ko izbrišete sporočila, lahko še vedno poiščete ta klepet."
-  },
-  "icu:ConversationHeader__DeleteMessagesInConversationConfirmation__description-with-sync": {
-    "messageformat": "Vsa sporočila v tem klepetu bodo izbrisana iz vseh vaših naprav. Ko izbrišete sporočila, lahko še vedno poiščete ta klepet."
   },
   "icu:deleteConversation": {
     "messageformat": "Izbriši"
@@ -1414,6 +1402,9 @@
   },
   "icu:calling__pre-call-info--many-people-in-call": {
     "messageformat": "{others, plural, one {{first}, {second}, in še {others,number} drug_ga so v tem klicu} two {{first}, {second}, in še {others,number} druga_gi so v tem klicu} few {{first}, {second}, in še {others,number} drugi_ge so v tem klicu} other {{first}, {second} in še {others,number} drugih so v tem klicu}}"
+  },
+  "icu:calling__pre-call-info--only-unknown-contacts-in-call": {
+    "messageformat": "{count, plural, one {V tem klicu je {count,number} oseba} two {V tem klicu sta {count,number} osebi} few {V tem klicu so {count,number} osebe} other {V tem klicu je {count,number} oseb}}"
   },
   "icu:calling__pre-call-info--will-ring-1": {
     "messageformat": "Signal bo poklical uporabnika_co {person}"
@@ -2735,6 +2726,9 @@
   "icu:incomingGroupCall__ringing-many": {
     "messageformat": "{remaining, plural, one {{ringer} kliče vas, uporabnika_ci {first}, {second} in še {remaining,number} drugega_go} two {{ringer} kliče vas, uporabnika_ci {first}, {second} in še {remaining,number} druga_gi} few {{ringer} kliče vas, uporabnika_ci {first}, {second} in še {remaining,number} druge} other {{ringer} kliče vas, uporabnika_ci {first}, {second} in še {remaining,number} drugih}}"
   },
+  "icu:outgoingCallConnecting": {
+    "messageformat": "Connecting..."
+  },
   "icu:outgoingCallRinging": {
     "messageformat": "Zvonjenje ..."
   },
@@ -3594,7 +3588,7 @@
     "messageformat": "Prekliči prenos"
   },
   "icu:BackupImportScreen__security-description": {
-    "messageformat": "Messages and chat info are protected by end-to-end encryption, including the sync process. <learnMoreLink>Learn more</learnMoreLink>"
+    "messageformat": "Sporočila in informacije o klepetu so zaščitene s šifriranjem od konca do konca, vključno s postopkom sinhronizacije. <learnMoreLink>Več o tem</learnMoreLink>"
   },
   "icu:BackupImportScreen__cancel-confirmation__title": {
     "messageformat": "Želite preklicati prenos?"
@@ -4725,13 +4719,13 @@
     "messageformat": "Prihaja do tehničnih težav v omrežju Signal. Ekipa vzdrževalcev se trudi, da bodo čimprej odpravljene."
   },
   "icu:InstallScreenUpdateDialog--update-required__title": {
-    "messageformat": "Update Required"
+    "messageformat": "Potrebna je posodobitev"
   },
   "icu:InstallScreenUpdateDialog--update-required__body": {
-    "messageformat": "To complete syncing your messages, update Signal desktop now."
+    "messageformat": "Če želite dokončati sinhronizacijo sporočil, posodobite Signal Desktop."
   },
   "icu:InstallScreenUpdateDialog--update-required__action-update": {
-    "messageformat": "Update"
+    "messageformat": "Posodobitev"
   },
   "icu:InstallScreenUpdateDialog--unsupported-os__title": {
     "messageformat": "Potrebna je posodobitev"
@@ -5572,13 +5566,13 @@
     "messageformat": "Kliknite <newCallButtonIcon></newCallButtonIcon>, če želite začeti nov zvočni ali video klic."
   },
   "icu:CallsList__SearchInputPlaceholder--missed-calls": {
-    "messageformat": "Search missed calls"
+    "messageformat": "Iskanje zgrešenih klicev"
   },
   "icu:CallsList__SearchInputPlaceholder": {
     "messageformat": "Iskanje"
   },
   "icu:CallsList__FilteredByMissedHeader": {
-    "messageformat": "Filtered by missed"
+    "messageformat": "Filtrirano po zgrešenih"
   },
   "icu:CallsList__ToggleFilterByMissedLabel": {
     "messageformat": "Filtriraj po zgrešenih"
@@ -5596,10 +5590,10 @@
     "messageformat": "Ni rezultatov za “{query}”"
   },
   "icu:CallsList__EmptyState--hasQueryAndMissedCalls": {
-    "messageformat": "No results for “{query}” in missed calls"
+    "messageformat": "V zgrešenih klicih ni rezultatov za \"{query}\""
   },
   "icu:CallsList__EmptyState--missedCalls": {
-    "messageformat": "No missed calls"
+    "messageformat": "Ni neodgovorjenih klicev"
   },
   "icu:CallsList__CreateCallLink": {
     "messageformat": "Ustvari povezavo do klica"
@@ -5770,16 +5764,13 @@
     "messageformat": "Majhne prilagoditve, popravki napak in izboljšave zmogljivosti. Hvala, da uporabljate Signal!",
     "ignoreUnused": true
   },
-  "icu:WhatsNew__v7.33--0": {
-    "messageformat": "Ta posodobitev odpravlja tudi napako pri izbiri emojija med pisanjem. Hvala, <linkKhuddite>@khuddite</linkKhuddite>!"
+  "icu:WhatsNew__v7.35--0": {
+    "messageformat": "Z novo ikono filtra poleg polja za iskanje lahko hitro poiščete neprebrane klepete."
   },
-  "icu:WhatsNew__v7.34--0": {
-    "messageformat": "The new filter icon next to the search box makes it easy to quickly find unread chats, but feel free to take your time deciding whether or not to leave them on read after seeing what they had to say."
+  "icu:WhatsNew__v7.36--0": {
+    "messageformat": "This update fixes a bug on macOS Sonoma that prevented screen sharing from working correctly if permission to share the screen had previously been denied — so you no longer need to share your screen with an error message."
   },
-  "icu:WhatsNew__v7.34--1": {
-    "messageformat": "This update introduces support for new processors on Windows like the Snapdragon X Elite, so you don't need to twist your ARM into emulating x86 anymore."
-  },
-  "icu:WhatsNew__v7.34--2": {
-    "messageformat": "We also fixed a bug that broke the dark theme in Signal when your operating system settings were configured to use a light theme. Signal Desktop can now properly handle your thematically split personality."
+  "icu:WhatsNew__v7.36--1": {
+    "messageformat": "Filter by Unread now highlights the selected chat, and the list of unread chats will automatically update as new messages arrive or when you catch up in one chat and click on another."
   }
 }

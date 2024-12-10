@@ -32,7 +32,6 @@ import {
   type ServiceIdString,
 } from '../../types/ServiceId';
 import type { RawBodyRange } from '../../types/BodyRange';
-import { LONG_ATTACHMENT_LIMIT } from '../../types/Message';
 import { PaymentEventKind } from '../../types/Payment';
 import { MessageRequestResponseEvent } from '../../types/MessageRequestResponseEvent';
 import type {
@@ -139,6 +138,7 @@ import { toAdminKeyBytes } from '../../util/callLinks';
 import { getRoomIdFromRootKey } from '../../util/callLinksRingrtc';
 import { SeenStatus } from '../../MessageSeenStatus';
 import { migrateAllMessages } from '../../messages/migrateMessageData';
+import { trimBody } from '../../util/longAttachment';
 
 const MAX_CONCURRENCY = 10;
 
@@ -465,7 +465,9 @@ export class BackupExportStream extends Readable {
                 )
               : null,
           expireTimerVersion: attributes.expireTimerVersion,
-          muteUntilMs: getSafeLongFromTimestamp(attributes.muteExpiresAt),
+          muteUntilMs: attributes.muteExpiresAt
+            ? getSafeLongFromTimestamp(attributes.muteExpiresAt)
+            : null,
           markedUnread: attributes.markedUnread === true,
           dontNotifyForMentionsIfMuted:
             attributes.dontNotifyForMentionsIfMuted === true,
@@ -888,12 +890,12 @@ export class BackupExportStream extends Readable {
         storySendMode,
         snapshot: {
           title: {
-            title: convo.name ?? '',
+            title: convo.name?.trim() ?? '',
           },
           description:
             convo.description != null
               ? {
-                  descriptionText: convo.description,
+                  descriptionText: convo.description.trim(),
                 }
               : null,
           avatarUrl: convo.avatar?.url,
@@ -1076,7 +1078,7 @@ export class BackupExportStream extends Readable {
         message,
         backupLevel,
       });
-    } else if (message.isErased) {
+    } else if (message.deletedForEveryone) {
       result.remoteDeletedMessage = {};
     } else if (messageHasPaymentEvent(message)) {
       const { payment } = message;
@@ -1310,7 +1312,14 @@ export class BackupExportStream extends Readable {
           groupCall.startedCallRecipientId = recipientId;
         }
 
-        groupCall.callId = Long.fromString(callId);
+        try {
+          groupCall.callId = Long.fromString(callId);
+        } catch (e) {
+          // Could not convert callId to long; likely a legacy backfilled callId with uuid
+          // TODO (DESKTOP-8007)
+          groupCall.callId = Long.fromNumber(0);
+        }
+
         groupCall.state = toGroupCallStateProto(callHistory.status);
         groupCall.startedCallTimestamp = Long.fromNumber(callHistory.timestamp);
         if (callHistory.endedTimestamp != null) {
@@ -1331,7 +1340,14 @@ export class BackupExportStream extends Readable {
         return { kind: NonBubbleResultKind.Drop };
       }
 
-      individualCall.callId = Long.fromString(callId);
+      try {
+        individualCall.callId = Long.fromString(callId);
+      } catch (e) {
+        // TODO (DESKTOP-8007)
+        // Could not convert callId to long; likely a legacy backfilled callId with uuid
+        individualCall.callId = Long.fromNumber(0);
+      }
+
       individualCall.type = toIndividualCallTypeProto(type);
       individualCall.direction = toIndividualCallDirectionProto(direction);
       individualCall.state = toIndividualCallStateProto(status);
@@ -2440,7 +2456,7 @@ export class BackupExportStream extends Readable {
       text:
         message.body != null
           ? {
-              body: message.body?.slice(0, LONG_ATTACHMENT_LIMIT),
+              body: message.body ? trimBody(message.body) : undefined,
               bodyRanges: message.bodyRanges?.map(range =>
                 this.toBodyRange(range)
               ),
